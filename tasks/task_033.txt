@@ -1,0 +1,116 @@
+# Task ID: 33
+# Title: Update README.md with Private Repository Installation Instructions
+# Status: pending
+# Dependencies: 32
+# Priority: medium
+# Description: Update the project's README.md with comprehensive installation instructions for the private GitHub repository, including collaborator access, token setup, and installing from GitHub Packages registry.
+# Details:
+1. Update the README.md with the following sections:
+
+### Installation from Private GitHub Repository
+
+#### For Collaborators
+1. Add a section explaining how to request access to the repository:
+   ```markdown
+   ## Installation
+   
+   ### For Collaborators
+   
+   1. Request access to the repository by contacting the repository administrator
+   2. Once added as a collaborator, clone the repository:
+      ```bash
+      git clone https://github.com/organization/lawfirm-rag-package.git
+      cd lawfirm-rag-package
+      pip install -e .
+      ```
+   ```
+
+#### For Installing via GitHub Packages
+1. Add detailed instructions for creating a Personal Access Token (PAT):
+   ```markdown
+   ### Installing from GitHub Packages
+   
+   To install this package directly from GitHub Packages, you'll need to:
+   
+   1. Create a GitHub Personal Access Token (PAT):
+      - Go to GitHub → Settings → Developer settings → Personal access tokens
+      - Click "Generate new token"
+      - Select the `read:packages` scope
+      - Copy the generated token
+   
+   2. Configure pip to use GitHub Packages with authentication:
+      ```bash
+      # Create or edit ~/.pip/pip.conf (Linux/Mac) or %APPDATA%\pip\pip.ini (Windows)
+      [global]
+      index-url = https://username:TOKEN@maven.pkg.github.com/organization/lawfirm-rag-package/
+      ```
+      
+   3. Install the package:
+      ```bash
+      pip install lawfirm-rag-package
+      ```
+   ```
+
+#### For CI/CD Environments
+1. Add instructions for using GitHub Actions secrets:
+   ```markdown
+   ### For CI/CD Environments
+   
+   When installing in CI/CD pipelines:
+   
+   ```yaml
+   # Example GitHub Actions workflow step
+   - name: Install from GitHub Packages
+     run: |
+       pip install lawfirm-rag-package
+     env:
+       PIP_EXTRA_INDEX_URL: https://$${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/organization/lawfirm-rag-package/
+   ```
+   ```
+
+2. Include troubleshooting section:
+   ```markdown
+   ### Troubleshooting
+   
+   - **Authentication Errors**: Ensure your token has the correct permissions
+   - **Package Not Found**: Verify you're using the correct repository URL
+   - **Version Issues**: Specify exact versions with `pip install lawfirm-rag-package==x.y.z`
+   ```
+
+3. Update any existing installation instructions to reflect the private nature of the package.
+
+4. Ensure the README includes a brief explanation of why the package is private and the benefits of using GitHub Packages for distribution.
+
+5. Add a section about versioning and releases that explains how to find and install specific versions from the GitHub Packages registry.
+
+# Test Strategy:
+1. Verify README.md content:
+   - Ensure all sections (collaborator access, token setup, GitHub Packages installation) are present and accurate
+   - Check that code examples are properly formatted and syntactically correct
+   - Verify URLs and paths are correct for the organization's repository structure
+
+2. Test the installation instructions:
+   - Create a test GitHub account with no prior access to the repository
+   - Follow the README instructions to request access, create a token, and install the package
+   - Document any points of confusion or steps that need clarification
+
+3. Validate GitHub Packages installation:
+   - Create a fresh virtual environment
+   - Configure pip according to the instructions
+   - Attempt to install the package using the provided commands
+   - Verify the package installs correctly and can be imported
+
+4. Test CI/CD instructions:
+   - Create a simple test workflow in a separate repository
+   - Configure the workflow according to the README instructions
+   - Verify the package installs correctly in the CI environment
+
+5. Peer review:
+   - Have a team member unfamiliar with the project follow the instructions
+   - Collect feedback on clarity and completeness
+   - Make adjustments based on feedback
+
+6. Accessibility check:
+   - Ensure the README follows accessibility best practices
+   - Check that code blocks are properly formatted for screen readers
+   - Verify color contrast for any custom formatting

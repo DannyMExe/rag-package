@@ -103,4 +103,5 @@ scripts/task-complexity-report.json
 # Build artifacts
 *.egg-info/
 dist/
-build/ 
+build/
+.pypirc

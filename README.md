@@ -16,6 +16,7 @@ A comprehensive Python package for document analysis and query generation using 
 
 ### Installation
 
+#### From GitHub Repository
 ```bash
 # Clone the repository
 git clone https://github.com/DannyMExe/rag-package.git
@@ -24,6 +25,18 @@ cd rag-package
 # Install the package
 pip install -e .
 ```
+
+#### From GitHub Packages (Private Distribution)
+```bash
+# Create a personal access token with 'read:packages' scope
+# Configure pip to use GitHub Packages
+pip config set global.index-url https://USERNAME:TOKEN@maven.pkg.github.com/DannyMExe/rag-package/simple/
+
+# Install the package
+pip install dannymexe-rag-package
+```
+
+Replace `USERNAME` with your GitHub username and `TOKEN` with your personal access token that has the `read:packages` scope.
 
 ### Basic Usage
 

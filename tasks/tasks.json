@@ -767,6 +767,59 @@
           "status": "done"
         }
       ]
+    },
+    {
+      "id": 32,
+      "title": "Set up GitHub Packages for Private Distribution",
+      "description": "Configure GitHub Packages as a private Python package registry for the lawfirm-rag-package, and update GitHub Actions workflow to publish to GitHub Packages instead of PyPI.",
+      "status": "in-progress",
+      "dependencies": [
+        31,
+        25,
+        3
+      ],
+      "priority": "high",
+      "details": "1. Configure GitHub Packages for Python package distribution:\n   - Update the `pyproject.toml` file to include GitHub Packages repository information and update package name to match GitHub's naming convention:\n     ```toml\n     [build-system]\n     requires = [\"setuptools>=42\", \"wheel\"]\n     build-backend = \"setuptools.build_meta\"\n\n     # Update package name from 'rag-package' to 'dannymexe-rag-package'\n     # to match GitHub's naming convention\n     ```\n\n2. Create or modify the GitHub Actions workflow file (`.github/workflows/publish.yml`):\n   ```yaml\n   name: Publish Python Package to GitHub Packages\n\n   on:\n     release:\n       types: [created]\n     # Optional: Add manual trigger\n     workflow_dispatch:\n\n   jobs:\n     deploy:\n       runs-on: ubuntu-latest\n       environment: release\n       permissions:\n         packages: write\n         contents: read\n       steps:\n       - uses: actions/checkout@v3\n       - name: Set up Python\n         uses: actions/setup-python@v4\n         with:\n           python-version: '3.10'\n       - name: Install dependencies\n         run: |\n           python -m pip install --upgrade pip\n           pip install build twine\n       - name: Build package\n         run: python -m build\n       - name: Generate .pypirc file\n         run: |\n           # Generate .pypirc file for GitHub Packages\n           # Configuration for twine to use GitHub repository\n       - name: Publish package to GitHub Packages\n         run: |\n           # Use twine command to publish to GitHub repository\n         env:\n           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n   ```\n\n3. Update repository settings:\n   - Go to the GitHub repository settings\n   - Navigate to \"Packages\" section\n   - Ensure package visibility is set appropriately (private)\n   - Configure package access permissions for team members\n\n4. Create documentation for users on how to install the package:\n   ```markdown\n   ## Installing from GitHub Packages\n\n   To install this package from GitHub Packages, you'll need to:\n\n   1. Create a Personal Access Token with `read:packages` scope\n   2. Configure pip to use GitHub Packages:\n\n      ```\n      pip config set global.index-url https://USERNAME:TOKEN@maven.pkg.github.com/OWNER/lawfirm-rag-package/simple/\n      ```\n\n   3. Install the package:\n\n      ```\n      pip install dannymexe-rag-package\n      ```\n   ```\n\n5. Update the README.md with installation instructions for private package distribution:\n   - Include documentation for installing from GitHub Packages\n   - Add steps for configuring pip to use GitHub Packages\n   - Add instructions for creating a personal access token\n\n6. Test the workflow by creating a GitHub release or using the manual workflow trigger.\n\nNote: Replace \"OWNER\" with the actual GitHub username or organization name throughout the configuration.",
+      "testStrategy": "1. Verify GitHub Packages configuration:\n   - Check that the `pyproject.toml` file has been correctly updated with GitHub Packages repository information and the package name has been changed to 'dannymexe-rag-package'\n   - Ensure the GitHub Actions workflow file is properly configured to publish to GitHub Packages with appropriate permissions and environment settings\n\n2. Test the GitHub Actions workflow:\n   - Create a test release tag or use the manual workflow trigger\n   - Monitor the GitHub Actions workflow execution\n   - Verify that the package is successfully built and published to GitHub Packages\n   - Confirm the .pypirc file is correctly generated during the build process\n\n3. Test package installation:\n   - Create a new virtual environment\n   - Configure pip to use GitHub Packages as described in the documentation\n   - Attempt to install the package using pip\n   - Verify that the package installs correctly and can be imported\n   - Ensure the package can be installed using the new name 'dannymexe-rag-package'\n\n4. Test access controls:\n   - Verify that only authorized users can access and install the package\n   - Test with a user who doesn't have access to confirm the package is private\n   - Test with an authorized user to confirm they can access and install the package\n\n5. Integration testing:\n   - Create a simple test project that depends on the package\n   - Verify that the package can be installed and used in a real project scenario\n   - Test any specific functionality that might be affected by the distribution method\n\n6. Documentation verification:\n   - Review the updated README and documentation\n   - Ensure the installation instructions are clear and accurate\n   - Have a team member follow the instructions to verify they work as expected\n   - Confirm the documentation reflects the new package name",
+      "subtasks": [
+        {
+          "id": "32.1",
+          "title": "Test GitHub release workflow",
+          "description": "Create a GitHub release to test the publishing workflow and verify the package is correctly published to GitHub Packages.",
+          "status": "todo"
+        },
+        {
+          "id": "32.2",
+          "title": "Verify package publication",
+          "description": "Check that the package appears in the GitHub Packages section of the repository after the workflow runs.",
+          "status": "todo"
+        },
+        {
+          "id": "32.3",
+          "title": "Test installation from GitHub Packages",
+          "description": "Create a test environment and verify that the package can be installed using the instructions in the README.",
+          "status": "todo"
+        },
+        {
+          "id": "32.4",
+          "title": "Coordinate with task #33 for installation instructions",
+          "description": "Review task #33 and provide more detailed installation instructions if needed based on testing results.",
+          "status": "todo"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "title": "Update README.md with Private Repository Installation Instructions",
+      "description": "Update the project's README.md with comprehensive installation instructions for the private GitHub repository, including collaborator access, token setup, and installing from GitHub Packages registry.",
+      "details": "1. Update the README.md with the following sections:\n\n### Installation from Private GitHub Repository\n\n#### For Collaborators\n1. Add a section explaining how to request access to the repository:\n   ```markdown\n   ## Installation\n   \n   ### For Collaborators\n   \n   1. Request access to the repository by contacting the repository administrator\n   2. Once added as a collaborator, clone the repository:\n      ```bash\n      git clone https://github.com/organization/lawfirm-rag-package.git\n      cd lawfirm-rag-package\n      pip install -e .\n      ```\n   ```\n\n#### For Installing via GitHub Packages\n1. Add detailed instructions for creating a Personal Access Token (PAT):\n   ```markdown\n   ### Installing from GitHub Packages\n   \n   To install this package directly from GitHub Packages, you'll need to:\n   \n   1. Create a GitHub Personal Access Token (PAT):\n      - Go to GitHub → Settings → Developer settings → Personal access tokens\n      - Click \"Generate new token\"\n      - Select the `read:packages` scope\n      - Copy the generated token\n   \n   2. Configure pip to use GitHub Packages with authentication:\n      ```bash\n      # Create or edit ~/.pip/pip.conf (Linux/Mac) or %APPDATA%\\pip\\pip.ini (Windows)\n      [global]\n      index-url = https://username:TOKEN@maven.pkg.github.com/organization/lawfirm-rag-package/\n      ```\n      \n   3. Install the package:\n      ```bash\n      pip install lawfirm-rag-package\n      ```\n   ```\n\n#### For CI/CD Environments\n1. Add instructions for using GitHub Actions secrets:\n   ```markdown\n   ### For CI/CD Environments\n   \n   When installing in CI/CD pipelines:\n   \n   ```yaml\n   # Example GitHub Actions workflow step\n   - name: Install from GitHub Packages\n     run: |\n       pip install lawfirm-rag-package\n     env:\n       PIP_EXTRA_INDEX_URL: https://$${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/organization/lawfirm-rag-package/\n   ```\n   ```\n\n2. Include troubleshooting section:\n   ```markdown\n   ### Troubleshooting\n   \n   - **Authentication Errors**: Ensure your token has the correct permissions\n   - **Package Not Found**: Verify you're using the correct repository URL\n   - **Version Issues**: Specify exact versions with `pip install lawfirm-rag-package==x.y.z`\n   ```\n\n3. Update any existing installation instructions to reflect the private nature of the package.\n\n4. Ensure the README includes a brief explanation of why the package is private and the benefits of using GitHub Packages for distribution.\n\n5. Add a section about versioning and releases that explains how to find and install specific versions from the GitHub Packages registry.",
+      "testStrategy": "1. Verify README.md content:\n   - Ensure all sections (collaborator access, token setup, GitHub Packages installation) are present and accurate\n   - Check that code examples are properly formatted and syntactically correct\n   - Verify URLs and paths are correct for the organization's repository structure\n\n2. Test the installation instructions:\n   - Create a test GitHub account with no prior access to the repository\n   - Follow the README instructions to request access, create a token, and install the package\n   - Document any points of confusion or steps that need clarification\n\n3. Validate GitHub Packages installation:\n   - Create a fresh virtual environment\n   - Configure pip according to the instructions\n   - Attempt to install the package using the provided commands\n   - Verify the package installs correctly and can be imported\n\n4. Test CI/CD instructions:\n   - Create a simple test workflow in a separate repository\n   - Configure the workflow according to the README instructions\n   - Verify the package installs correctly in the CI environment\n\n5. Peer review:\n   - Have a team member unfamiliar with the project follow the instructions\n   - Collect feedback on clarity and completeness\n   - Make adjustments based on feedback\n\n6. Accessibility check:\n   - Ensure the README follows accessibility best practices\n   - Check that code blocks are properly formatted for screen readers\n   - Verify color contrast for any custom formatting",
+      "status": "pending",
+      "dependencies": [
+        32
+      ],
+      "priority": "medium",
+      "subtasks": []
     }
   ]
 }

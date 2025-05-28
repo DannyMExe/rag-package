@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rag-package"
+name = "dannymexe-rag-package"
 version = "0.1.0"
 description = "AI-powered document analysis and query generation tool with RAG capabilities"
 readme = "README.md"
@@ -77,11 +77,11 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lawfirm-rag/lawfirm-rag"
+Homepage = "https://github.com/DannyMExe/rag-package"
 Documentation = "https://lawfirm-rag.readthedocs.io"
-Repository = "https://github.com/lawfirm-rag/lawfirm-rag.git"
-"Bug Tracker" = "https://github.com/lawfirm-rag/lawfirm-rag/issues"
-Changelog = "https://github.com/lawfirm-rag/lawfirm-rag/blob/main/CHANGELOG.md"
+Repository = "https://github.com/DannyMExe/rag-package"
+"Bug Tracker" = "https://github.com/DannyMExe/rag-package/issues"
+Changelog = "https://github.com/DannyMExe/rag-package/blob/main/CHANGELOG.md"
 
 [project.scripts]
 lawfirm-rag = "lawfirm_rag.cli.main:main"
