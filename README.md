@@ -1,6 +1,6 @@
-# LawFirm RAG Package
+# RAG Package
 
-A comprehensive Python package for legal document analysis and query generation using Retrieval-Augmented Generation (RAG) with local AI models.
+A comprehensive Python package for document analysis and query generation using Retrieval-Augmented Generation (RAG) with local AI models. Currently optimized for legal documents with support for Westlaw, LexisNexis, and Casetext query generation.
 
 ## Features
 
@@ -18,8 +18,8 @@ A comprehensive Python package for legal document analysis and query generation 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/lawfirm-rag-package.git
-cd lawfirm-rag-package
+git clone https://github.com/DannyMExe/rag-package.git
+cd rag-package
 
 # Install the package
 pip install -e .
@@ -181,6 +181,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For questions, issues, or contributions:
-- 📧 Email: [your-email@domain.com]
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/lawfirm-rag-package/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/lawfirm-rag-package/discussions) 
+- 🐛 Issues: [GitHub Issues](https://github.com/DannyMExe/rag-package/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/DannyMExe/rag-package/discussions) 

@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lawfirm-rag"
+name = "rag-package"
 version = "0.1.0"
-description = "AI-powered legal document analysis and query generation tool"
+description = "AI-powered document analysis and query generation tool with RAG capabilities"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

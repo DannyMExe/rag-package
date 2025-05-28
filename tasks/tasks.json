@@ -727,6 +727,46 @@
       ],
       "priority": "high",
       "subtasks": []
+    },
+    {
+      "id": 31,
+      "title": "Set up GitHub Repository for lawfirm-rag-package",
+      "description": "Create a remote GitHub repository for the LawFirm-RAG project, configure the local repository to connect to the remote origin, and push the initial codebase.",
+      "status": "done",
+      "dependencies": [
+        1,
+        3,
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Create a new repository on GitHub:\n   - Log in to GitHub and create a new repository named \"lawfirm-rag-package\"\n   - Keep the repository private initially (can be changed later)\n   - Do not initialize with README, .gitignore, or license (these already exist locally)\n\n2. Configure the local repository to connect to the remote:\n   - Navigate to the local project directory\n   - Run `git remote add origin https://github.com/username/lawfirm-rag-package.git`\n   - Verify the remote connection with `git remote -v`\n\n3. Push the codebase to GitHub:\n   - The local repository is already initialized with main branch, README.md, MIT License, and .gitignore\n   - Ensure all necessary files are staged: `git add .`\n   - Create an initial commit with a descriptive message: `git commit -m \"Initial commit: LawFirm-RAG package structure\"`\n   - Set the upstream branch: `git push -u origin main`\n   - Verify the push was successful by checking the GitHub repository\n\n4. Configure branch protection rules (optional):\n   - Set up branch protection for the main branch\n   - Require pull request reviews before merging\n   - Require status checks to pass before merging\n\n5. Set up GitHub Actions workflow (optional):\n   - Create a `.github/workflows` directory\n   - Add a basic CI workflow YAML file for testing\n\n6. Update documentation with repository information:\n   - Add the repository URL to the README.md if not already included\n   - Include basic clone instructions for contributors",
+      "testStrategy": "1. Verify the GitHub repository exists and is accessible:\n   - Navigate to the GitHub repository URL\n   - Confirm the repository name matches \"lawfirm-rag-package\"\n   - Verify repository visibility settings are as expected\n\n2. Confirm remote configuration:\n   - Run `git remote -v` in the local repository\n   - Verify that the origin points to the correct GitHub URL\n\n3. Validate the initial codebase push:\n   - Check that all files from the local repository appear in the GitHub repository\n   - Verify file structure matches the expected project layout\n   - Confirm that the comprehensive README.md, MIT License, and Python-specific .gitignore are present\n   - Confirm that .gitignore is working correctly (no unwanted files in repository)\n\n4. Test clone functionality:\n   - Clone the repository to a new location using `git clone https://github.com/username/lawfirm-rag-package.git`\n   - Verify all files are correctly cloned\n\n5. Verify branch configuration:\n   - Confirm the default branch is set correctly (main)\n   - Check that any branch protection rules are functioning as expected\n\n6. Document verification:\n   - Ensure README.md contains the correct repository URL\n   - Verify installation instructions work when following them from the GitHub repository",
+      "subtasks": [
+        {
+          "id": 31.1,
+          "title": "Local repository preparation",
+          "description": "Git repository has been initialized with main branch, comprehensive README.md created, MIT License added, and .gitignore configured for Python project.",
+          "status": "done"
+        },
+        {
+          "id": 31.2,
+          "title": "Create GitHub repository",
+          "description": "Create the 'lawfirm-rag-package' repository on GitHub without initializing README, license or gitignore since these already exist locally.",
+          "status": "done"
+        },
+        {
+          "id": 31.3,
+          "title": "Connect and push to remote repository",
+          "description": "Connect the local repository to GitHub remote and push the initial codebase.",
+          "status": "done"
+        },
+        {
+          "id": 31.4,
+          "title": "Configure repository settings",
+          "description": "Set up branch protection rules and other repository settings as needed.",
+          "status": "done"
+        }
+      ]
     }
   ]
 }

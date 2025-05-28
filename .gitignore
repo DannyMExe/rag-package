@@ -83,9 +83,18 @@ temp/
 logs/
 *.log
 
-# Task Master (keep structure, ignore content)
+# Task Master (development workflow - keep structure, ignore content)
 tasks/task_*.md
 scripts/task-complexity-report.json
+.taskmasterconfig
+
+# Cursor IDE (development environment specific)
+.cursor/
+
+# Roo AI (development environment specific)  
+.roo/
+.roomodes
+.windsurfrules
 
 # Environment and config (keep examples)
 .env
