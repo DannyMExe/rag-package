@@ -3,22 +3,21 @@
 # Status: in-progress
 # Dependencies: 31, 25, 3
 # Priority: high
-# Description: Configure GitHub Packages as a private Python package registry for the lawfirm-rag-package, and update GitHub Actions workflow to publish to GitHub Packages instead of PyPI.
+# Description: Configure GitHub Actions workflow to publish the lawfirm-rag-package to PyPI instead of GitHub Packages, and update package configuration for public distribution.
 # Details:
-1. Configure GitHub Packages for Python package distribution:
-   - Update the `pyproject.toml` file to include GitHub Packages repository information and update package name to match GitHub's naming convention:
+1. Configure package for PyPI distribution:
+   - Update the `pyproject.toml` file to include PyPI repository information and update package name to match PyPI naming convention:
      ```toml
      [build-system]
      requires = ["setuptools>=42", "wheel"]
      build-backend = "setuptools.build_meta"
 
-     # Update package name from 'rag-package' to 'dannymexe-rag-package'
-     # to match GitHub's naming convention
+     # Update package name to 'lawfirm-rag-package' to match PyPI naming convention
      ```
 
-2. Create or modify the GitHub Actions workflow file (`.github/workflows/publish.yml`):
+2. Create or modify the GitHub Actions workflow file (`.github/workflows/publish-to-pypi.yml`):
    ```yaml
-   name: Publish Python Package to GitHub Packages
+   name: Publish Python Package to PyPI
 
    on:
      release:
@@ -31,7 +30,7 @@
        runs-on: ubuntu-latest
        environment: release
        permissions:
-         packages: write
+         id-token: write  # Required for PyPI trusted publishing
          contents: read
        steps:
        - uses: actions/checkout@v3
@@ -42,77 +41,61 @@
        - name: Install dependencies
          run: |
            python -m pip install --upgrade pip
-           pip install build twine
+           pip install build
        - name: Build package
          run: python -m build
-       - name: Generate .pypirc file
-         run: |
-           # Generate .pypirc file for GitHub Packages
-           # Configuration for twine to use GitHub repository
-       - name: Publish package to GitHub Packages
-         run: |
-           # Use twine command to publish to GitHub repository
-         env:
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       - name: Publish package to PyPI
+         uses: pypa/gh-action-pypi-publish@release/v1
    ```
 
-3. Update repository settings:
-   - Go to the GitHub repository settings
-   - Navigate to "Packages" section
-   - Ensure package visibility is set appropriately (private)
-   - Configure package access permissions for team members
+3. Set up PyPI account and token:
+   - Create a PyPI account if you don't have one
+   - Generate a PyPI API token with upload scope specifically for "Upload to project: lawfirm-rag-package"
+   - Add the token to GitHub repository secrets as PYPI_API_TOKEN
 
 4. Create documentation for users on how to install the package:
    ```markdown
-   ## Installing from GitHub Packages
+   ## Installing from PyPI
 
-   To install this package from GitHub Packages, you'll need to:
+   To install this package from PyPI, simply run:
 
-   1. Create a Personal Access Token with `read:packages` scope
-   2. Configure pip to use GitHub Packages:
-
-      ```
-      pip config set global.index-url https://USERNAME:TOKEN@maven.pkg.github.com/OWNER/lawfirm-rag-package/simple/
-      ```
-
-   3. Install the package:
-
-      ```
-      pip install dannymexe-rag-package
-      ```
+   ```
+   pip install lawfirm-rag-package
+   ```
    ```
 
-5. Update the README.md with installation instructions for private package distribution:
-   - Include documentation for installing from GitHub Packages
-   - Add steps for configuring pip to use GitHub Packages
-   - Add instructions for creating a personal access token
+5. Update the README.md with installation instructions for public package distribution:
+   - Include documentation for installing from PyPI
+   - Remove any references to GitHub Packages or private distribution
 
 6. Test the workflow by creating a GitHub release or using the manual workflow trigger.
 
-Note: Replace "OWNER" with the actual GitHub username or organization name throughout the configuration.
+Note: This approach is preferable as:
+- PyPI is the standard Python package registry
+- Public packages on PyPI are freely available without authentication
+- PyPI has better integration with pip and Python tooling
+- PyPI packages are easier to install for end users
+- The workflow uses PyPI's trusted publishing mechanism, which is more secure than using API tokens directly in the workflow
 
 # Test Strategy:
-1. Verify GitHub Packages configuration:
-   - Check that the `pyproject.toml` file has been correctly updated with GitHub Packages repository information and the package name has been changed to 'dannymexe-rag-package'
-   - Ensure the GitHub Actions workflow file is properly configured to publish to GitHub Packages with appropriate permissions and environment settings
+1. Verify PyPI configuration:
+   - Check that the `pyproject.toml` file has been correctly updated with PyPI repository information and the package name has been changed to 'lawfirm-rag-package'
+   - Ensure the GitHub Actions workflow file is properly configured to publish to PyPI with appropriate permissions and environment settings
 
 2. Test the GitHub Actions workflow:
    - Create a test release tag or use the manual workflow trigger
    - Monitor the GitHub Actions workflow execution
-   - Verify that the package is successfully built and published to GitHub Packages
-   - Confirm the .pypirc file is correctly generated during the build process
+   - Verify that the package is successfully built and published to PyPI
 
 3. Test package installation:
    - Create a new virtual environment
-   - Configure pip to use GitHub Packages as described in the documentation
-   - Attempt to install the package using pip
+   - Attempt to install the package using pip directly from PyPI
    - Verify that the package installs correctly and can be imported
-   - Ensure the package can be installed using the new name 'dannymexe-rag-package'
+   - Ensure the package can be installed using the name 'lawfirm-rag-package'
 
-4. Test access controls:
-   - Verify that only authorized users can access and install the package
-   - Test with a user who doesn't have access to confirm the package is private
-   - Test with an authorized user to confirm they can access and install the package
+4. Test access controls (if needed):
+   - If the package should be public, verify that anyone can access and install it
+   - If the package should be private, verify that only authorized users can access it
 
 5. Integration testing:
    - Create a simple test project that depends on the package
@@ -123,7 +106,7 @@ Note: Replace "OWNER" with the actual GitHub username or organization name throu
    - Review the updated README and documentation
    - Ensure the installation instructions are clear and accurate
    - Have a team member follow the instructions to verify they work as expected
-   - Confirm the documentation reflects the new package name
+   - Confirm the documentation reflects the new package name and PyPI installation method
 
 # Subtasks:
 ## 32.1. Test GitHub release workflow [todo]
@@ -147,6 +130,78 @@ Note: Replace "OWNER" with the actual GitHub username or organization name throu
 ## 32.4. Coordinate with task #33 for installation instructions [todo]
 ### Dependencies: None
 ### Description: Review task #33 and provide more detailed installation instructions if needed based on testing results.
+### Details:
+
+
+## 32.5. Create PyPI account and generate API token [todo]
+### Dependencies: None
+### Description: Create a PyPI account if needed and generate a PyPI API token with upload scope for the package.
+### Details:
+
+
+## 32.6. Add PyPI token to GitHub repository secrets [todo]
+### Dependencies: None
+### Description: Add the PyPI API token to GitHub repository secrets as PYPI_API_TOKEN for use in the workflow.
+### Details:
+
+
+## 32.7. Update subtasks 32.1-32.3 for PyPI instead of GitHub Packages [todo]
+### Dependencies: None
+### Description: The original subtasks refer to GitHub Packages, but we're now using PyPI. When executing these tasks, verify publication to PyPI and test installation from PyPI instead.
+### Details:
+
+
+## 33.7. Test GitHub release workflow for PyPI [pending]
+### Dependencies: None
+### Description: Create a GitHub release to test the publishing workflow and verify the package is correctly published to PyPI.
+### Details:
+
+
+## 34.7. Verify package publication on PyPI [pending]
+### Dependencies: None
+### Description: Check that the package appears in the PyPI registry after the workflow runs successfully.
+### Details:
+
+
+## 35.7. Test installation from PyPI [pending]
+### Dependencies: None
+### Description: Create a test environment and verify that the package can be installed from PyPI using the instructions in the README.
+### Details:
+
+
+## 36.7. Update package name in pyproject.toml [done]
+### Dependencies: None
+### Description: Update the package name in pyproject.toml from 'dannymexe-rag-package' to 'lawfirm-rag-package' for PyPI publishing.
+### Details:
+
+
+## 37.7. Create GitHub Actions workflow for PyPI publishing [done]
+### Dependencies: None
+### Description: Create a GitHub Actions workflow file for publishing to PyPI using trusted publishing mechanism.
+### Details:
+
+
+## 38.7. Update README with PyPI installation instructions [done]
+### Dependencies: None
+### Description: Update the README.md file with instructions for installing the package from PyPI.
+### Details:
+
+
+## 32.8. Generate PyPI token with specific project scope [todo]
+### Dependencies: None
+### Description: Generate a PyPI API token with the specific scope "Upload to project: lawfirm-rag-package" as required for the trusted publishing workflow.
+### Details:
+
+
+## 32.9. Create GitHub release to trigger PyPI publication [todo]
+### Dependencies: None
+### Description: Create a GitHub release with an appropriate version tag to trigger the PyPI publishing workflow.
+### Details:
+
+
+## 32.10. Verify trusted publishing configuration [todo]
+### Dependencies: None
+### Description: Ensure the GitHub Actions workflow is correctly configured for PyPI's trusted publishing mechanism, which eliminates the need for API tokens to be passed directly in the workflow.
 ### Details:
 
 

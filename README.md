@@ -26,17 +26,11 @@ cd rag-package
 pip install -e .
 ```
 
-#### From GitHub Packages (Private Distribution)
+#### From PyPI
 ```bash
-# Create a personal access token with 'read:packages' scope
-# Configure pip to use GitHub Packages
-pip config set global.index-url https://USERNAME:TOKEN@maven.pkg.github.com/DannyMExe/rag-package/simple/
-
-# Install the package
-pip install dannymexe-rag-package
+# Install directly from PyPI
+pip install lawfirm-rag-package
 ```
-
-Replace `USERNAME` with your GitHub username and `TOKEN` with your personal access token that has the `read:packages` scope.
 
 ### Basic Usage
 
