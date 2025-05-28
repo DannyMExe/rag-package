@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-package"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-powered document analysis and query generation tool with RAG capabilities"
 readme = "README.md"
 license = {text = "Evaluation License"}
 authors = [
-    {name = "LawFirm-RAG Team", email = "contact@lawfirm-rag.com"}
+    {name = "DannyMExe", email = "dannyjmargolin@gmail.com"}
 ]
 maintainers = [
-    {name = "LawFirm-RAG Team", email = "contact@lawfirm-rag.com"}
+    {name = "DannyMExe", email = "dannyjmargolin@gmail.com"}
 ]
 keywords = [
     "legal", "ai", "document-analysis", "rag", "llm", "legal-research", 
