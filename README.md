@@ -1,4 +1,4 @@
-# RAG Package
+# LawFirm RAG Package
 
 A comprehensive Python package for document analysis and query generation using Retrieval-Augmented Generation (RAG) with local AI models. Currently optimized for legal documents with support for Westlaw, LexisNexis, and Casetext query generation.
 
@@ -16,52 +16,46 @@ A comprehensive Python package for document analysis and query generation using 
 
 ### Installation
 
+#### From PyPI (Recommended)
+```bash
+# Install directly from PyPI
+pip install lawfirm-rag-package
+```
+
 #### From GitHub Repository
 ```bash
 # Clone the repository
 git clone https://github.com/DannyMExe/rag-package.git
 cd rag-package
 
-# Install the package
+# Install the package in development mode
 pip install -e .
-```
-
-#### From PyPI
-```bash
-# Install directly from PyPI
-pip install lawfirm-rag-package
 ```
 
 ### Basic Usage
 
 #### Web Interface
 ```bash
-# Start the web server (simplest)
-lrag serve
-
-# Or use the full command name
-lawfirm-rag serve
+# Start the web server
+rag serve
 
 # Open http://localhost:8000/app in your browser
 ```
 
 #### CLI Usage
 ```bash
-# Start web server (simplest)
-lrag serve
-
 # Analyze documents
-lrag analyze document.pdf --type summary
+rag analyze document.pdf --type summary
 
-# Generate queries  
-lrag query document.pdf --database westlaw
+# Generate queries for legal databases
+rag query document.pdf --database westlaw
 
 # Process multiple files
-lrag analyze *.pdf --output results.json
+rag analyze *.pdf --output results.json
 
-# Full command examples
-lawfirm-rag serve --port 8080
-lawfirm-rag analyze document.pdf --type summary
+# Additional options
+rag serve --port 8080
+rag analyze document.pdf --type summary
 ```
 
 ## AI Model Setup
@@ -199,4 +193,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions, issues, or contributions:
 - 🐛 Issues: [GitHub Issues](https://github.com/DannyMExe/rag-package/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/DannyMExe/rag-package/discussions) 
+- 💬 Discussions: [GitHub Discussions](https://github.com/DannyMExe/rag-package/discussions)
+
+[project.urls]
+Homepage = "https://github.com/DannyMExe/rag-package"
+Documentation = "https://lawfirm-rag.readthedocs.io"
+Repository = "https://github.com/DannyMExe/rag-package"
+"Bug Tracker" = "https://github.com/DannyMExe/rag-package/issues"
+Changelog = "https://github.com/DannyMExe/rag-package/blob/main/CHANGELOG.md" 

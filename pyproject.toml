@@ -83,8 +83,7 @@ Repository = "https://github.com/DannyMExe/rag-package"
 Changelog = "https://github.com/DannyMExe/rag-package/blob/main/CHANGELOG.md"
 
 [project.scripts]
-lawfirm-rag = "lawfirm_rag.cli.main:main"
-lrag = "lawfirm_rag.cli.main:main"
+rag = "lawfirm_rag.cli.main:main"
 
 [project.entry-points."lawfirm_rag.plugins"]
 # Plugin entry points for extensibility

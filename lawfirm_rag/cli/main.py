@@ -20,13 +20,13 @@ console = Console()
 
 
 @click.group()
-@click.version_option(version=__version__, prog_name="lawfirm-rag")
+@click.version_option(version=__version__, prog_name="rag")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--config", "-c", type=click.Path(exists=True), help="Path to configuration file")
 @click.pass_context
 def main(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
     """
-    LawFirm-RAG: AI-Powered Legal Document Analysis Package
+    RAG: AI-Powered Legal Document Analysis Package
     
     A modern Python package for legal document analysis, query generation,
     and AI-powered legal research assistance.
@@ -37,7 +37,7 @@ def main(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
     ctx.obj["config"] = config
     
     if verbose:
-        console.print(f"[green]LawFirm-RAG v{__version__}[/green]")
+        console.print(f"[green]RAG v{__version__}[/green]")
         if config:
             console.print(f"[blue]Using config: {config}[/blue]")
 
@@ -116,7 +116,7 @@ def query(ctx: click.Context, files: tuple, database: str, all_databases: bool,
 @click.pass_context
 def serve(ctx: click.Context, host: str, port: int, reload: bool, 
           api_key: Optional[str], cors: bool) -> None:
-    """Start the LawFirm-RAG web server."""
+    """Start the RAG web server."""
     from .server import start_server
     
     try:

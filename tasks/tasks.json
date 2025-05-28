@@ -772,7 +772,7 @@
       "id": 32,
       "title": "Set up GitHub Packages for Private Distribution",
       "description": "Configure GitHub Actions workflow to publish the lawfirm-rag-package to PyPI instead of GitHub Packages, and update package configuration for public distribution.",
-      "status": "in-progress",
+      "status": "done",
       "dependencies": [
         31,
         25,
@@ -786,50 +786,50 @@
           "id": "32.1",
           "title": "Test GitHub release workflow",
           "description": "Create a GitHub release to test the publishing workflow and verify the package is correctly published to GitHub Packages.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.2",
           "title": "Verify package publication",
           "description": "Check that the package appears in the GitHub Packages section of the repository after the workflow runs.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.3",
           "title": "Test installation from GitHub Packages",
           "description": "Create a test environment and verify that the package can be installed using the instructions in the README.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.4",
           "title": "Coordinate with task #33 for installation instructions",
           "description": "Review task #33 and provide more detailed installation instructions if needed based on testing results.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.5",
           "title": "Create PyPI account and generate API token",
           "description": "Create a PyPI account if needed and generate a PyPI API token with upload scope for the package.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.6",
           "title": "Add PyPI token to GitHub repository secrets",
           "description": "Add the PyPI API token to GitHub repository secrets as PYPI_API_TOKEN for use in the workflow.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": "32.7",
           "title": "Update subtasks 32.1-32.3 for PyPI instead of GitHub Packages",
           "description": "The original subtasks refer to GitHub Packages, but we're now using PyPI. When executing these tasks, verify publication to PyPI and test installation from PyPI instead.",
-          "status": "todo"
+          "status": "done"
         },
         {
           "id": 33.7,
           "title": "Test GitHub release workflow for PyPI",
           "description": "Create a GitHub release to test the publishing workflow and verify the package is correctly published to PyPI.",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         },
@@ -838,7 +838,7 @@
           "title": "Verify package publication on PyPI",
           "description": "Check that the package appears in the PyPI registry after the workflow runs successfully.",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         },
@@ -847,7 +847,7 @@
           "title": "Test installation from PyPI",
           "description": "Create a test environment and verify that the package can be installed from PyPI using the instructions in the README.",
           "details": "",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         },
@@ -882,7 +882,7 @@
           "id": "32.8",
           "title": "Generate PyPI token with specific project scope",
           "description": "Generate a PyPI API token with the specific scope \"Upload to project: lawfirm-rag-package\" as required for the trusted publishing workflow.",
-          "status": "todo",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         },
@@ -890,7 +890,7 @@
           "id": "32.9",
           "title": "Create GitHub release to trigger PyPI publication",
           "description": "Create a GitHub release with an appropriate version tag to trigger the PyPI publishing workflow.",
-          "status": "todo",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         },
@@ -898,7 +898,7 @@
           "id": "32.10",
           "title": "Verify trusted publishing configuration",
           "description": "Ensure the GitHub Actions workflow is correctly configured for PyPI's trusted publishing mechanism, which eliminates the need for API tokens to be passed directly in the workflow.",
-          "status": "todo",
+          "status": "done",
           "dependencies": [],
           "parentTaskId": 32
         }

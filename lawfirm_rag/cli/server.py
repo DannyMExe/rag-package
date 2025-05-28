@@ -1,5 +1,5 @@
 """
-Server CLI module for LawFirm-RAG.
+Server CLI module for RAG.
 
 Handles the 'serve' command functionality for starting the web server.
 """
@@ -22,7 +22,7 @@ def start_server(
     verbose: bool = False,
     config: Optional[str] = None
 ) -> None:
-    """Start the LawFirm-RAG web server.
+    """Start the RAG web server.
     
     Args:
         host: Host to bind the server to
@@ -68,7 +68,7 @@ def start_server(
     if config:
         os.environ["LAWFIRM_RAG_CONFIG_PATH"] = config
     
-    console.print(f"[blue]Starting LawFirm-RAG server on {host}:{port}[/blue]")
+    console.print(f"[blue]Starting RAG server on {host}:{port}[/blue]")
     
     if api_key:
         console.print("[yellow]API key authentication enabled[/yellow]")

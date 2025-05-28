@@ -1,6 +1,6 @@
 # Task ID: 32
 # Title: Set up GitHub Packages for Private Distribution
-# Status: in-progress
+# Status: done
 # Dependencies: 31, 25, 3
 # Priority: high
 # Description: Configure GitHub Actions workflow to publish the lawfirm-rag-package to PyPI instead of GitHub Packages, and update package configuration for public distribution.
@@ -109,61 +109,61 @@ Note: This approach is preferable as:
    - Confirm the documentation reflects the new package name and PyPI installation method
 
 # Subtasks:
-## 32.1. Test GitHub release workflow [todo]
+## 32.1. Test GitHub release workflow [done]
 ### Dependencies: None
 ### Description: Create a GitHub release to test the publishing workflow and verify the package is correctly published to GitHub Packages.
 ### Details:
 
 
-## 32.2. Verify package publication [todo]
+## 32.2. Verify package publication [done]
 ### Dependencies: None
 ### Description: Check that the package appears in the GitHub Packages section of the repository after the workflow runs.
 ### Details:
 
 
-## 32.3. Test installation from GitHub Packages [todo]
+## 32.3. Test installation from GitHub Packages [done]
 ### Dependencies: None
 ### Description: Create a test environment and verify that the package can be installed using the instructions in the README.
 ### Details:
 
 
-## 32.4. Coordinate with task #33 for installation instructions [todo]
+## 32.4. Coordinate with task #33 for installation instructions [done]
 ### Dependencies: None
 ### Description: Review task #33 and provide more detailed installation instructions if needed based on testing results.
 ### Details:
 
 
-## 32.5. Create PyPI account and generate API token [todo]
+## 32.5. Create PyPI account and generate API token [done]
 ### Dependencies: None
 ### Description: Create a PyPI account if needed and generate a PyPI API token with upload scope for the package.
 ### Details:
 
 
-## 32.6. Add PyPI token to GitHub repository secrets [todo]
+## 32.6. Add PyPI token to GitHub repository secrets [done]
 ### Dependencies: None
 ### Description: Add the PyPI API token to GitHub repository secrets as PYPI_API_TOKEN for use in the workflow.
 ### Details:
 
 
-## 32.7. Update subtasks 32.1-32.3 for PyPI instead of GitHub Packages [todo]
+## 32.7. Update subtasks 32.1-32.3 for PyPI instead of GitHub Packages [done]
 ### Dependencies: None
 ### Description: The original subtasks refer to GitHub Packages, but we're now using PyPI. When executing these tasks, verify publication to PyPI and test installation from PyPI instead.
 ### Details:
 
 
-## 33.7. Test GitHub release workflow for PyPI [pending]
+## 33.7. Test GitHub release workflow for PyPI [done]
 ### Dependencies: None
 ### Description: Create a GitHub release to test the publishing workflow and verify the package is correctly published to PyPI.
 ### Details:
 
 
-## 34.7. Verify package publication on PyPI [pending]
+## 34.7. Verify package publication on PyPI [done]
 ### Dependencies: None
 ### Description: Check that the package appears in the PyPI registry after the workflow runs successfully.
 ### Details:
 
 
-## 35.7. Test installation from PyPI [pending]
+## 35.7. Test installation from PyPI [done]
 ### Dependencies: None
 ### Description: Create a test environment and verify that the package can be installed from PyPI using the instructions in the README.
 ### Details:
@@ -187,19 +187,19 @@ Note: This approach is preferable as:
 ### Details:
 
 
-## 32.8. Generate PyPI token with specific project scope [todo]
+## 32.8. Generate PyPI token with specific project scope [done]
 ### Dependencies: None
 ### Description: Generate a PyPI API token with the specific scope "Upload to project: lawfirm-rag-package" as required for the trusted publishing workflow.
 ### Details:
 
 
-## 32.9. Create GitHub release to trigger PyPI publication [todo]
+## 32.9. Create GitHub release to trigger PyPI publication [done]
 ### Dependencies: None
 ### Description: Create a GitHub release with an appropriate version tag to trigger the PyPI publishing workflow.
 ### Details:
 
 
-## 32.10. Verify trusted publishing configuration [todo]
+## 32.10. Verify trusted publishing configuration [done]
 ### Dependencies: None
 ### Description: Ensure the GitHub Actions workflow is correctly configured for PyPI's trusted publishing mechanism, which eliminates the need for API tokens to be passed directly in the workflow.
 ### Details:
