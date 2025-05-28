@@ -29,22 +29,32 @@ pip install -e .
 
 #### Web Interface
 ```bash
-# Start the web server
-python -m lawfirm_rag.api.fastapi_app
+# Start the web server (simplest)
+lrag serve
+
+# Or use the full command name
+lawfirm-rag serve
 
 # Open http://localhost:8000/app in your browser
 ```
 
 #### CLI Usage
 ```bash
-# Analyze documents
-lawfirm-rag analyze document.pdf --type summary
+# Start web server (simplest)
+lrag serve
 
-# Generate queries
-lawfirm-rag query document.pdf --database westlaw
+# Analyze documents
+lrag analyze document.pdf --type summary
+
+# Generate queries  
+lrag query document.pdf --database westlaw
 
 # Process multiple files
-lawfirm-rag analyze *.pdf --output results.json
+lrag analyze *.pdf --output results.json
+
+# Full command examples
+lawfirm-rag serve --port 8080
+lawfirm-rag analyze document.pdf --type summary
 ```
 
 ## AI Model Setup
