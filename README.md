@@ -58,6 +58,32 @@ rag serve --port 8080
 rag analyze document.pdf --type summary
 ```
 
+### Git Bash Usage
+
+If you're using Git Bash on Windows and the `rag` command isn't found, use one of these options:
+
+#### Option 1: Use Python module syntax
+```bash
+# Run any command through the Python module
+python -m lawfirm_rag.cli.main serve
+python -m lawfirm_rag.cli.main analyze document.pdf
+```
+
+#### Option 2: Add Scripts directory to Git Bash PATH
+Add this line to your `~/.bashrc` file:
+```bash
+# Adjust the Python version in the path if needed
+export PATH="$PATH:/c/Users/$USERNAME/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0/LocalCache/local-packages/Python311/Scripts"
+```
+Then restart Git Bash or run `source ~/.bashrc`
+
+#### Option 3: Create an alias
+Add this line to your `~/.bashrc` file:
+```bash
+alias rag="python -m lawfirm_rag.cli.main"
+```
+Then restart Git Bash or run `source ~/.bashrc`
+
 ## AI Model Setup
 
 The package supports local GGUF models for privacy and offline operation:

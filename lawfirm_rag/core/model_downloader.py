@@ -95,7 +95,8 @@ class ModelDownloader:
             )
         
         filename = self.SUPPORTED_VARIANTS[model_variant]
-        url = f"https://huggingface.co/{self.HF_REPO}/resolve/main/{filename}?download=true"
+        # Use the direct download URL format from HuggingFace
+        url = f"https://huggingface.co/{self.HF_REPO}/resolve/main/{filename}"
         
         logger.info(f"Generated download URL for {model_variant}: {url}")
         return url
@@ -138,6 +139,12 @@ class ModelDownloader:
             Dictionary containing progress information
         """
         total_size = int(response.headers.get('content-length', 0))
+        
+        # If content-length is not available, try to get the expected size
+        if total_size == 0:
+            total_size = self.EXPECTED_SIZES.get(model_variant, 0)
+            logger.warning(f"Content-length header missing, using expected size: {total_size}")
+            
         downloaded_size = 0
         start_time = time.time()
         
@@ -163,8 +170,16 @@ class ModelDownloader:
                     elapsed_time = current_time - start_time
                     speed = downloaded_size / elapsed_time if elapsed_time > 0 else 0
                     
-                    progress = (downloaded_size / total_size * 100) if total_size > 0 else 0
-                    eta = (total_size - downloaded_size) / speed if speed > 0 else None
+                    # Calculate progress safely even if total_size is unknown
+                    if total_size > 0:
+                        progress = (downloaded_size / total_size * 100)
+                        eta = (total_size - downloaded_size) / speed if speed > 0 else None
+                    else:
+                        # If we don't know the total size, show progress as indeterminate
+                        progress = 0
+                        eta = None
+                        # Log the ongoing download size
+                        logger.info(f"Downloaded {downloaded_size / 1_000_000:.2f} MB so far (total size unknown)")
                     
                     self._current_download.update({
                         "downloaded_size": downloaded_size,
