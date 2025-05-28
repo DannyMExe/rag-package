@@ -1,0 +1,11 @@
+# Task ID: 18
+# Title: Add Authentication to API
+# Status: pending
+# Dependencies: 16
+# Priority: medium
+# Description: Implement optional API key authentication for server mode.
+# Details:
+Add middleware for API key authentication in the FastAPI server. Store keys securely and validate them for incoming requests.
+
+# Test Strategy:
+Test the API with valid and invalid keys to ensure that authentication works as expected.

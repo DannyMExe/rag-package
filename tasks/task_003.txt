@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Create pyproject.toml
+# Status: done
+# Dependencies: 2
+# Priority: high
+# Description: Set up the `pyproject.toml` file for modern Python packaging.
+# Details:
+Create a `pyproject.toml` file that includes metadata such as package name, version, author, and dependencies. Follow PEP 518 and PEP 621 standards.
+
+# Test Strategy:
+Validate the `pyproject.toml` file using `poetry check` or similar tools to ensure it meets packaging standards.

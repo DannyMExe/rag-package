@@ -1,0 +1,11 @@
+# Task ID: 16
+# Title: Migrate FastAPI Server to New Structure
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Integrate the existing FastAPI server into the new package structure.
+# Details:
+Move the FastAPI server code into `api/fastapi_app.py` and ensure all routes are defined in `api/routes.py`. Update the server initialization logic accordingly.
+
+# Test Strategy:
+Run the FastAPI server and verify that all endpoints are accessible and function as expected.

@@ -1,0 +1,11 @@
+# Task ID: 14
+# Title: Implement Batch Processing Support
+# Status: pending
+# Dependencies: 12
+# Priority: medium
+# Description: Add support for processing multiple documents and directories in the CLI.
+# Details:
+Enhance the CLI to accept multiple file inputs and directories for batch processing in `cli/analyze.py`. Implement logic to handle each file appropriately.
+
+# Test Strategy:
+Test batch processing with various document sets to ensure all documents are processed correctly.

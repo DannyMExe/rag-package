@@ -1,0 +1,11 @@
+# Task ID: 22
+# Title: Implement Template System for Web Interface
+# Status: pending
+# Dependencies: 21
+# Priority: medium
+# Description: Use Jinja2 templates for dynamic content in the web interface.
+# Details:
+Integrate Jinja2 for rendering templates in the web interface. Ensure that dynamic content is displayed correctly.
+
+# Test Strategy:
+Test the web interface to ensure that templates render correctly with dynamic data.

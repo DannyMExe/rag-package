@@ -1,0 +1,11 @@
+# Task ID: 15
+# Title: Develop Output Formats for CLI
+# Status: pending
+# Dependencies: 12
+# Priority: medium
+# Description: Implement support for multiple output formats in the CLI.
+# Details:
+Add options for output formats such as JSON, YAML, and human-readable text in the CLI commands. Use libraries like `PyYAML` (version 5.4.1) for YAML support.
+
+# Test Strategy:
+Verify that the output formats are correctly generated and match the expected structure.

@@ -1,0 +1,11 @@
+# Task ID: 9
+# Title: Implement SQLite Storage Layer
+# Status: pending
+# Dependencies: 7
+# Priority: high
+# Description: Create a SQLite-based storage layer for document management.
+# Details:
+Implement the storage logic in `core/storage.py` using SQLite for data persistence. Use `sqlite3` for database interactions and ensure proper migrations are handled.
+
+# Test Strategy:
+Run integration tests to verify that documents can be stored and retrieved correctly from the SQLite database.

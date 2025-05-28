@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Implement setup.py for Backward Compatibility
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Create a `setup.py` file for backward compatibility with older pip versions.
+# Details:
+Write a `setup.py` script that reads from `pyproject.toml` and specifies package metadata and dependencies for older pip versions.
+
+# Test Strategy:
+Test installation using `pip install .` to ensure compatibility with older pip versions.

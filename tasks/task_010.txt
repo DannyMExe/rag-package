@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: Develop Configuration Management System
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Implement a configuration management system using YAML/TOML.
+# Details:
+Create a configuration management system in `utils/config.py` that reads from YAML/TOML files. Ensure it supports user-specific configurations and sensible defaults.
+
+# Test Strategy:
+Test the configuration loading functionality with various configuration files to ensure it behaves as expected.

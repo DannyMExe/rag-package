@@ -1,0 +1,11 @@
+# Task ID: 20
+# Title: Implement Health Check Endpoints
+# Status: pending
+# Dependencies: 16
+# Priority: medium
+# Description: Add monitoring endpoints for deployment scenarios.
+# Details:
+Create health check endpoints in `api/routes.py` to monitor the status of the API and its dependencies.
+
+# Test Strategy:
+Access the health check endpoints and verify that they return the expected status.

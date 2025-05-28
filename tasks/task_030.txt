@@ -1,0 +1,72 @@
+# Task ID: 30
+# Title: Fix AI Model Output Formatting and Query Generation
+# Status: done
+# Dependencies: 8, 15, 28
+# Priority: high
+# Description: Improve AI model output formatting by removing [/INST] tags, enhance Westlaw query syntax prompts, and fix confidence scoring in responses.
+# Details:
+This task involves several improvements to the AI model output and query generation:
+
+1. Remove [/INST] tags from AI responses:
+   - Identify where these instruction tags are leaking into the final output
+   - Implement a post-processing filter in the AIEngine class to strip these tags
+   - Ensure the filter handles various formats of instruction tags ([/INST], [INST], etc.)
+
+2. Improve Westlaw query syntax prompts:
+   - Review current prompt templates for Westlaw query generation
+   - Enhance prompts to better guide the model in generating syntactically correct Westlaw queries
+   - Add examples of well-formed Westlaw queries in the prompt templates
+   - Implement syntax validation for generated queries
+   - Create a specialized prompt template specifically for legal research queries
+
+3. Fix confidence scoring:
+   - Review the current implementation of confidence scoring
+   - Identify issues in the calculation or presentation of confidence scores
+   - Implement a more reliable algorithm for determining confidence scores
+   - Normalize confidence scores to a consistent scale (e.g., 0-100%)
+   - Add metadata to responses that explains the basis for confidence scores
+
+4. Implementation steps:
+   - Update the AIEngine class in the core module to handle these improvements
+   - Modify the prompt templates in the templates directory
+   - Update the response processing pipeline to clean outputs
+   - Add unit tests for each improvement
+   - Document the changes in code comments and update API documentation
+
+5. Integration considerations:
+   - Ensure changes are backward compatible with existing API calls
+   - Update any frontend components that display confidence scores
+   - Consider adding a configuration option to toggle the new formatting features
+
+# Test Strategy:
+1. Test removal of instruction tags:
+   - Create unit tests with sample AI responses containing [/INST] tags
+   - Verify the post-processing correctly removes all variants of instruction tags
+   - Test with various edge cases (nested tags, malformed tags, etc.)
+
+2. Test Westlaw query generation:
+   - Create a test suite with legal research scenarios
+   - Compare generated queries before and after the improvements
+   - Verify syntax correctness of generated queries
+   - Test with a variety of legal topics and complexity levels
+   - Validate that generated queries work correctly when submitted to Westlaw
+
+3. Test confidence scoring:
+   - Create test cases with known expected confidence levels
+   - Verify scores are calculated correctly and consistently
+   - Test edge cases (very high/low confidence scenarios)
+   - Ensure confidence scores correlate with actual response quality
+
+4. Integration testing:
+   - Test the complete pipeline from user input to final formatted output
+   - Verify CLI output displays correctly with the improvements
+   - Test API endpoints return properly formatted responses
+   - Verify frontend components display the improved outputs correctly
+
+5. Performance testing:
+   - Measure any impact on response time from the additional processing
+   - Ensure the improvements don't significantly increase memory usage
+
+6. Manual verification:
+   - Conduct user testing to verify the improvements enhance usability
+   - Compare side-by-side outputs from before and after the changes

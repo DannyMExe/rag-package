@@ -1,0 +1,195 @@
+# Task ID: 28
+# Title: Implement Model Loading and Selection Functionality
+# Status: completed
+# Dependencies: 27, 9, 17, 12, 11
+# Priority: high
+# Description: Develop a system to load and select downloaded GGUF models, connecting them to the AI engine. This includes backend API, frontend UI, and integration with the existing AIEngine class.
+# Details:
+1. Backend Model Loading API:
+   - Create new endpoints in the FastAPI server (e.g., `/api/models/load`, `/api/models/unload`, `/api/models/list`)
+   - Implement functions to load and unload models from the downloaded models directory
+   - Use the `llama_cpp` library to handle GGUF model loading
+
+2. Model Discovery:
+   - Create a function to scan the downloaded models directory and detect available GGUF models
+   - Store model metadata (name, path, size) in the SQLite database
+
+3. Frontend Model Selection:
+   - Extend the existing Model Management modal in the frontend
+   - Add a dropdown or list to display available models
+   - Implement buttons for loading/unloading models
+   - Use AJAX calls to interact with the backend API
+
+4. AI Engine Integration:
+   - Modify the AIEngine class to support dynamic model loading
+   - Add methods to switch between loaded models
+   - Ensure proper initialization and cleanup of models
+
+5. Status Updates:
+   - Implement a WebSocket connection for real-time status updates
+   - Send model loading progress and status to the frontend
+   - Update UI indicators when models are loaded/unloaded
+
+6. Error Handling:
+   - Implement try-except blocks for model loading operations
+   - Create custom exceptions for various failure scenarios (e.g., InvalidModelError, ModelLoadError)
+   - Display user-friendly error messages in the frontend
+
+7. Memory Management:
+   - Implement a mechanism to unload models from memory when switching
+   - Use Python's garbage collection to ensure proper cleanup
+   - Monitor and limit the number of simultaneously loaded models based on available system resources
+
+8. Configuration:
+   - Add new configuration options for model directory path and maximum loaded models
+   - Update the configuration file and parsing logic
+
+9. CLI Integration:
+   - Extend the CLI to support model loading and unloading operations
+   - Add a new subcommand for model management (e.g., `lawchat models list`, `lawchat models load &lt;model_name&gt;`)
+
+10. Documentation:
+    - Update API documentation to include new model management endpoints
+    - Add user guide sections for model loading and selection
+    - Include developer documentation on extending the model loading functionality
+
+# Test Strategy:
+1. Unit Tests:
+   - Write tests for model discovery function
+   - Test model loading/unloading functions with mock GGUF files
+   - Verify AIEngine class modifications
+
+2. Integration Tests:
+   - Test the interaction between backend API and SQLite storage
+   - Verify proper integration of model loading with the AI engine
+
+3. API Tests:
+   - Use pytest to test new API endpoints
+   - Verify correct responses for various scenarios (success, failure, invalid input)
+
+4. Frontend Tests:
+   - Use Jest and React Testing Library to test new UI components
+   - Verify correct rendering of model list and status indicators
+
+5. End-to-End Tests:
+   - Create Selenium or Cypress tests to simulate user interactions
+   - Test the complete flow of discovering, loading, and using a model
+
+6. Performance Tests:
+   - Measure memory usage during model loading and switching
+   - Test with multiple large models to ensure efficient resource management
+
+7. Error Handling Tests:
+   - Simulate various error conditions (e.g., corrupt model file, insufficient memory)
+   - Verify appropriate error messages are displayed
+
+8. CLI Tests:
+   - Test new CLI commands for model management
+   - Verify correct output and error handling
+
+9. Documentation Review:
+   - Ensure all new functionality is properly documented
+   - Verify accuracy of API documentation and user guide
+
+10. Manual Testing:
+    - Perform manual tests with real GGUF models
+    - Verify smooth user experience in the frontend
+    - Test edge cases and potential user mistakes
+
+# Subtasks:
+## 1. Implement Backend Model Loading API [done]
+### Dependencies: None
+### Description: Create new endpoints in the FastAPI server for model management and implement functions to load and unload models.
+### Details:
+Create endpoints: `/api/models/load`, `/api/models/unload`, `/api/models/list`. Implement functions using `llama_cpp` library to handle GGUF model loading. Ensure proper error handling and status updates.
+<info added on 2025-05-27T22:40:41.029Z>
+✅ COMPLETED: Backend Model Loading API Implementation
+
+**What was accomplished:**
+
+1. **Created comprehensive ModelManager class** (`lawfirm_rag/core/model_manager.py`):
+   - **Thread-safe model management** with proper locking mechanisms
+   - **Memory management**: Automatic unloading of oldest models when memory limits reached
+   - **Model discovery**: Integration with ModelDownloader to find downloaded models
+   - **Multiple model support**: Can load/unload/switch between multiple models
+   - **Status tracking**: Comprehensive status reporting and memory usage estimation
+
+2. **Added new Pydantic models** for API responses:
+   - `ModelLoadRequest`: For model loading requests with force_reload option
+   - `ModelLoadResponse`: Standardized responses for load operations
+   - `LoadedModelInfo`: Detailed information about loaded models
+   - `LoadedModelsResponse`: Complete status of all loaded models
+
+3. **Implemented comprehensive API endpoints**:
+   - `GET /models/loaded`: Get information about currently loaded models
+   - `POST /models/load`: Load a downloaded model into memory
+   - `POST /models/unload`: Unload a model from memory
+   - `POST /models/switch`: Switch active model without unloading others
+
+4. **Enhanced existing endpoints**:
+   - Updated `/health` endpoint to include model manager status
+   - Updated `/models` endpoint to use new ModelManager instead of old implementation
+
+5. **Global AI component integration**:
+   - Model loading automatically updates global `ai_engine` and `query_generator`
+   - Proper fallback handling when no models are loaded
+   - Seamless integration with existing analysis and query endpoints
+
+**Key Features:**
+- **Memory-aware loading**: Prevents system overload by limiting concurrent models
+- **Automatic cleanup**: Unloads oldest models when memory limits are reached
+- **Thread safety**: All operations are thread-safe for concurrent requests
+- **Error handling**: Comprehensive error handling with proper HTTP status codes
+- **Status reporting**: Real-time status of loaded models, memory usage, and active model
+</info added on 2025-05-27T22:40:41.029Z>
+
+## 2. Develop Model Discovery System [completed]
+### Dependencies: None
+### Description: Create a function to scan the downloaded models directory and store model metadata in the SQLite database.
+### Details:
+Implement a function to detect available GGUF models in the specified directory. Store model name, path, and size in the SQLite database. Ensure periodic rescanning to detect new or removed models.
+
+## 3. Extend Frontend for Model Selection [done]
+### Dependencies: 28.1, 28.2
+### Description: Modify the existing Model Management modal to include model selection functionality and integrate with backend API.
+### Details:
+Add a dropdown or list to display available models. Implement load/unload buttons. Use AJAX calls to interact with the backend API. Update UI indicators for model status.
+<info added on 2025-05-27T22:42:42.356Z>
+**Enhanced Model Management Modal Implementation**
+
+- Created comprehensive UI for model management with sections for loaded and available models
+- Implemented dynamic button states that transition between Download and Load based on model status
+- Added visual indicators for active models using green gradient styling and badges
+- Integrated memory usage display and load time tracking for each model
+
+**JavaScript Functionality**
+- Developed core model management methods: loadModel(), unloadModel(), switchToModel()
+- Created UI update functions: updateLoadedModelsDisplay(), updateDownloadedModelsDisplay()
+- Implemented dynamic UI generation with createLoadedModelsSection() and displayLoadedModels()
+- Added real-time status updates and synchronization with backend state
+
+**User Experience Improvements**
+- Implemented toast notifications for all model operations
+- Added comprehensive error handling for failed operations
+- Created hover effects and visual feedback for interactive elements
+- Ensured seamless integration with existing download functionality
+
+**CSS Enhancements**
+- Styled loaded models section with proper spacing and borders
+- Created distinctive styling for active models
+- Implemented consistent button styling across all model actions
+- Added responsive design elements for better usability
+</info added on 2025-05-27T22:42:42.356Z>
+
+## 4. Integrate Dynamic Model Loading with AI Engine [completed]
+### Dependencies: 28.1
+### Description: Modify the AIEngine class to support dynamic model loading and switching between loaded models.
+### Details:
+Add methods to switch between loaded models. Ensure proper initialization and cleanup of models. Implement memory management to unload models when switching.
+
+## 5. Implement Real-time Status Updates [completed]
+### Dependencies: 28.1, 28.3, 28.4
+### Description: Create a WebSocket connection for sending real-time model loading progress and status updates to the frontend.
+### Details:
+Implement WebSocket connection in both backend and frontend. Send model loading progress and status updates. Update UI indicators when models are loaded/unloaded.
+

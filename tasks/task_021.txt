@@ -1,0 +1,11 @@
+# Task ID: 21
+# Title: Bundle Web Interface with Package
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Integrate the web interface into the package structure.
+# Details:
+Move the web interface files into the `web` directory and ensure they are served correctly by the FastAPI server.
+
+# Test Strategy:
+Run the FastAPI server and verify that the web interface is accessible and functions as expected.

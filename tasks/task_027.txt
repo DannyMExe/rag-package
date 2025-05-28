@@ -1,0 +1,229 @@
+# Task ID: 27
+# Title: Implement Hugging Face Model Download Functionality
+# Status: done
+# Dependencies: 8, 16, 17
+# Priority: high
+# Description: Implement real model downloading from Hugging Face for the Law Chat GGUF model, replacing the simulated download in the frontend with actual downloading functionality.
+# Details:
+1. Create a new module `model_downloader.py` in the `core` directory.
+
+2. Implement a `ModelDownloader` class with the following methods:
+   - `download_model(model_variant: str) -> bool`: Main method to handle the download process
+   - `get_download_url(model_variant: str) -> str`: Generate the correct Hugging Face URL
+   - `track_progress(response: requests.Response, total_size: int)`: Generator to track download progress
+   - `validate_downloaded_file(file_path: str) -> bool`: Verify the integrity of the downloaded file
+   - `is_model_downloaded(model_variant: str) -> bool`: Check if model already exists and is valid
+   - `get_download_progress() -> dict`: Get current download status
+   - `cancel_download() -> bool`: Cancel ongoing downloads
+   - `list_available_models() -> list`: List all supported model variants
+   - `cleanup_failed_downloads() -> bool`: Clean up temporary files
+
+3. In the backend API (`api/fastapi_app.py`), create new endpoints:
+   - GET `/models/available`: Lists all available models with download status
+   - POST `/models/download`: Starts model download with background processing
+   - GET `/models/download-progress`: Provides real-time download progress
+   - POST `/models/cancel-download`: Cancels ongoing downloads
+   - DELETE `/models/cleanup`: Cleans up failed/temporary downloads
+
+4. Update the frontend (`web/static/assets/app.js`) to:
+   - Replace simulated download with real download API calls
+   - Implement real-time progress tracking with speed (MB/s) and ETA
+   - Add download cancellation functionality with cancel button
+   - Handle and display download errors
+   - Update model status upon successful download
+
+5. Modify `core/config.py` to include:
+   - `MODEL_STORAGE_DIR`: Path to store downloaded models
+   - `SUPPORTED_MODEL_VARIANTS`: List of supported model variants with sizes
+
+6. Implement error handling and logging in `model_downloader.py`:
+   - Network errors
+   - Insufficient disk space
+   - Invalid model variant
+   - Custom `ModelDownloadError` exception with detailed error messages
+
+7. Update `core/model_manager.py` to integrate with the new download functionality:
+   - Use `ModelDownloader` for fetching new models
+   - Update model status in the database after successful download
+   - Auto-initialize AI components after successful downloads
+
+8. Implement file validation after download:
+   - Check file size (with 5% tolerance)
+   - Verify GGUF format using magic bytes verification
+
+9. Add unit tests for the `ModelDownloader` class in `tests/test_model_downloader.py`
+
+10. Update API documentation to include new endpoints related to model downloading.
+
+# Test Strategy:
+1. Unit Tests:
+   - Test `get_download_url` method with various model variants
+   - Mock download process to test progress tracking
+   - Test file validation method with both valid and invalid files
+   - Test error handling for network issues and invalid variants
+   - Verify GGUF magic bytes validation works correctly
+
+2. Integration Tests:
+   - Test the entire download process end-to-end
+   - Verify correct storage of downloaded models
+   - Check database updates after successful downloads
+   - Test auto-initialization of AI components after download
+
+3. API Tests:
+   - Test all five new endpoints for model management
+   - Verify correct responses and error handling
+   - Test background task processing for downloads
+   - Verify cancellation functionality works properly
+
+4. Frontend Tests:
+   - Test UI updates during download process
+   - Verify error message display for failed downloads
+   - Check model status updates after successful downloads
+   - Test cancellation button functionality
+   - Verify progress display shows speed and ETA correctly
+
+5. Manual Testing:
+   - Attempt downloads with different network conditions
+   - Verify progress bar accuracy
+   - Test cancellation of ongoing downloads
+   - Check behavior with insufficient disk space
+   - Verify toast notifications for all major events
+
+6. Performance Testing:
+   - Measure download speeds for different model sizes
+   - Test memory usage during large file downloads
+   - Verify chunked reading (8KB chunks) works efficiently
+
+7. Security Testing:
+   - Ensure downloaded files are stored securely
+   - Verify that only authorized users can trigger downloads
+   - Test API key authentication for download endpoints
+
+8. Compatibility Testing:
+   - Test functionality across different browsers and devices
+   - Verify downloads work for all supported model variants (Q2_K, Q3_K_M, Q4_0, Q5_0, Q8_0)
+
+# Subtasks:
+## 1. Create ModelDownloader class [done]
+### Dependencies: None
+### Description: Implement the ModelDownloader class in model_downloader.py with methods for downloading, URL generation, progress tracking, and file validation.
+### Details:
+Create model_downloader.py in the core directory. Implement ModelDownloader class with methods: download_model, get_download_url, track_progress, and validate_downloaded_file. Include error handling for network issues, disk space, and invalid model variants.
+<info added on 2025-05-27T22:28:52.189Z>
+✅ COMPLETED: ModelDownloader class implementation
+
+**What was accomplished:**
+- Created comprehensive `ModelDownloader` class in `lawfirm_rag/core/model_downloader.py`
+- Implemented all required methods:
+  - `download_model()`: Main download method with proper error handling
+  - `get_download_url()`: Generates correct Hugging Face URLs for all model variants
+  - `track_progress()`: Real-time progress tracking with speed and ETA calculations
+  - `validate_downloaded_file()`: File validation including size checks and GGUF format validation
+  - `is_model_downloaded()`: Check if model already exists and is valid
+  - `get_download_progress()`: Get current download status
+  - `cancel_download()`: Cancel ongoing downloads
+  - `list_available_models()`: List all supported model variants
+  - `cleanup_failed_downloads()`: Clean up temporary files
+
+**Key Features Implemented:**
+- **Proper Hugging Face URLs**: Uses correct format `https://huggingface.co/TheBloke/law-chat-GGUF/resolve/main/{filename}?download=true`
+- **All Model Variants Supported**: Q2_K, Q3_K_M, Q4_0, Q5_0, Q8_0 with correct filenames and expected sizes
+- **Progress Tracking**: Real-time progress with speed, ETA, and percentage completion
+- **File Validation**: Size validation (5% tolerance) and GGUF magic bytes verification
+- **Error Handling**: Custom `ModelDownloadError` exception with detailed error messages
+- **Temporary Files**: Uses `.tmp` extension during download, renamed on completion
+- **Storage Management**: Creates `models/downloaded/` directory automatically
+- **Session Management**: Proper HTTP session with User-Agent header
+
+**Technical Implementation:**
+- Uses `requests` with streaming for large file downloads
+- Implements chunked reading (8KB chunks) for memory efficiency
+- Progress updates every 0.5 seconds to avoid excessive UI updates
+- Comprehensive logging for debugging and monitoring
+- Thread-safe progress tracking with internal state management
+
+**File Structure:**
+```
+lawfirm_rag/
+├── core/
+│   ├── model_downloader.py (new - 350+ lines)
+│   └── __init__.py (updated with imports)
+└── models/
+    └── downloaded/ (created automatically)
+```
+</info added on 2025-05-27T22:28:52.189Z>
+
+## 2. Update backend API [done]
+### Dependencies: 27.1
+### Description: Create new endpoints in api/routes.py for model download and progress tracking.
+### Details:
+Add POST /api/models/download endpoint to trigger model download. Implement GET /api/models/download-progress endpoint to retrieve current download progress. Ensure proper error handling and response formatting.
+<info added on 2025-05-27T22:30:35.270Z>
+I've implemented comprehensive model download API endpoints in `lawfirm_rag/api/fastapi_app.py`:
+
+- `GET /models/available`: Lists all available models with download status
+- `POST /models/download`: Starts model download with background processing
+- `GET /models/download-progress`: Provides real-time download progress
+- `POST /models/cancel-download`: Cancels ongoing downloads
+- `DELETE /models/cleanup`: Cleans up failed/temporary downloads
+
+Created Pydantic models for request/response handling:
+- `ModelDownloadRequest`, `ModelDownloadResponse`, `ModelProgressResponse`, `ModelListResponse`
+
+Implemented robust download logic with:
+- Background downloads using FastAPI BackgroundTasks
+- Validation for supported model variants
+- Prevention of duplicate downloads
+- Conflict handling (one download at a time)
+- Auto-initialization of AI components after successful download
+- Comprehensive error handling with appropriate HTTP status codes
+
+Key features include real-time progress tracking, force download option, download cancellation, cleanup functionality, status management, and API key authentication.
+
+All endpoints use proper HTTP status codes and include comprehensive logging for debugging and monitoring.
+</info added on 2025-05-27T22:30:35.270Z>
+
+## 3. Modify frontend for real downloads [done]
+### Dependencies: 27.2
+### Description: Update ModelManager.vue to use real download API calls and implement progress tracking.
+### Details:
+Replace simulated download in web/src/components/ModelManager.vue with real API calls. Implement progress tracking using the new download-progress endpoint. Add error handling and display for download issues. Update model status display upon successful download.
+<info added on 2025-05-27T22:32:26.780Z>
+The frontend integration for real model downloads has been completed. The simulated download in web/src/components/ModelManager.vue has been replaced with real API calls to the backend endpoints. Key implementations include:
+
+- Real API integration with `/models/download` and `/models/download-progress` endpoints in `lawfirm_rag/web/static/assets/app.js`
+- Real-time progress tracking showing download percentage, speed (MB/s), and estimated time remaining
+- Download cancellation functionality via the `/models/cancel-download` endpoint with a dedicated cancel button
+- Comprehensive error handling for various download failure scenarios
+- Enhanced UI with improved progress display, status management, and visual feedback
+- Smart polling system that updates progress every second during active downloads
+- Proper cleanup of progress intervals and error recovery mechanisms
+- Automatic model status updates after successful downloads
+
+The implementation maintains responsive design principles and includes appropriate styling for all new UI elements. All download states (idle, downloading, completed, error, cancelled) are properly handled with clear visual feedback to the user.
+</info added on 2025-05-27T22:32:26.780Z>
+
+## 4. Update configuration and model management [done]
+### Dependencies: 27.1
+### Description: Modify config.py and model_manager.py to support the new download functionality.
+### Details:
+Add MODEL_STORAGE_DIR and SUPPORTED_MODEL_VARIANTS to core/config.py. Update core/model_manager.py to use ModelDownloader for fetching new models and update model status in the database after successful download. Implement auto-initialization of AI components after successful downloads. Configure model variants with their respective sizes: Q2_K (2.83GB), Q3_K_M (3.30GB), Q4_0 (3.83GB), Q5_0 (4.65GB), Q8_0 (7.16GB).
+
+## 5. Implement file validation and update documentation [done]
+### Dependencies: 27.1, 27.2, 27.4
+### Description: Add post-download file validation and update API documentation for new endpoints.
+### Details:
+Implement file size check (with 5% tolerance) and GGUF format validation using magic bytes verification after download. Update API documentation to include details about all five new model download endpoints: `/models/available`, `/models/download`, `/models/download-progress`, `/models/cancel-download`, and `/models/cleanup`. Document the Pydantic models used for request/response handling.
+
+## 6. Implement comprehensive error handling and logging [done]
+### Dependencies: 27.1, 27.2, 27.3
+### Description: Enhance error handling and logging throughout the model download system.
+### Details:
+Implement comprehensive error handling for various download scenarios including network errors, insufficient disk space, invalid model variants, and interrupted downloads. Create a custom ModelDownloadError exception with detailed error messages. Add thorough logging throughout the download process for debugging and monitoring purposes. Ensure proper cleanup of temporary files in error scenarios.
+
+## 7. Optimize download performance and memory usage [done]
+### Dependencies: 27.1, 27.2
+### Description: Optimize the download process for large model files to ensure efficient memory usage and reliable downloads.
+### Details:
+Implement chunked reading (8KB chunks) for memory-efficient downloads of large model files. Optimize progress tracking to update at appropriate intervals (e.g., every 0.5 seconds) to avoid excessive UI updates. Implement proper HTTP session management with appropriate headers. Test and optimize download performance across different network conditions.
+

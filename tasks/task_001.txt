@@ -1,0 +1,11 @@
+# Task ID: 1
+# Title: Setup Project Repository
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Initialize a new Git repository for the LawFirm-RAG project.
+# Details:
+Create a new directory for the project and initialize a Git repository using `git init`. Set up a `.gitignore` file to exclude unnecessary files like `__pycache__`, `.env`, and others.
+
+# Test Strategy:
+Verify that the repository is initialized correctly and that the `.gitignore` file is functioning as expected.

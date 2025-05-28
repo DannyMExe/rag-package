@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: Implement CLI Subcommands
+# Status: pending
+# Dependencies: 6
+# Priority: high
+# Description: Develop all CLI subcommands for analysis, query generation, and server mode.
+# Details:
+Implement subcommands in `cli/analyze.py`, `cli/query.py`, and `cli/server.py` to handle respective functionalities. Use `argparse` for argument parsing.
+
+# Test Strategy:
+Test each CLI subcommand to ensure they execute correctly and produce expected outputs.

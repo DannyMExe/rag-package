@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Define Dependencies in requirements.txt
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Create a `requirements.txt` file for development and production dependencies.
+# Details:
+List all necessary dependencies in `requirements.txt`, including version constraints to avoid conflicts. Include separate sections for development and production dependencies.
+
+# Test Strategy:
+Run `pip install -r requirements.txt` to verify that all dependencies are installed correctly.

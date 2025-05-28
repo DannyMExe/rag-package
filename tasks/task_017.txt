@@ -1,0 +1,11 @@
+# Task ID: 17
+# Title: Implement API Documentation
+# Status: pending
+# Dependencies: 16
+# Priority: medium
+# Description: Add OpenAPI/Swagger documentation for all API endpoints.
+# Details:
+Use FastAPI's built-in documentation features to generate OpenAPI documentation for all endpoints. Ensure that it is accessible at `/docs` and `/redoc` paths.
+
+# Test Strategy:
+Access the documentation endpoints and verify that all API endpoints are documented correctly.

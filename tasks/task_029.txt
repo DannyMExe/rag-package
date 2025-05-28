@@ -1,0 +1,76 @@
+# Task ID: 29
+# Title: Fix File Upload Lambda Bug in FastAPI Endpoint
+# Status: done
+# Dependencies: 7, 16
+# Priority: high
+# Description: Replace the lambda function with a proper FileObj class in the FastAPI endpoint to correctly handle file processing and uploads.
+# Details:
+The current implementation uses a lambda function for file processing in the FastAPI endpoint, which is causing bugs in file upload functionality. This task involves:
+
+1. Identify the problematic endpoint in the FastAPI server (likely in `api/routes.py`)
+2. Replace the lambda function with a proper FileObj class that:
+   - Properly handles file metadata (name, size, type)
+   - Manages file I/O operations safely
+   - Implements proper error handling for file operations
+   - Ensures proper cleanup of temporary files
+   - Handles different file types consistently
+
+3. Update the endpoint to use the new FileObj class:
+```python
+# Current problematic implementation (example)
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    processor = lambda f: process_document(f.filename, f.file)
+    result = await processor(file)
+    return {"status": "success", "result": result}
+
+# New implementation with FileObj class
+class FileObj:
+    def __init__(self, file: UploadFile):
+        self.file = file
+        self.filename = file.filename
+        self.content_type = file.content_type
+        
+    async def process(self):
+        # Proper file handling logic
+        try:
+            # File processing code
+            return processed_result
+        except Exception as e:
+            logger.error(f"Error processing file {self.filename}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"File processing error: {str(e)}")
+        finally:
+            # Cleanup code
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    file_obj = FileObj(file)
+    result = await file_obj.process()
+    return {"status": "success", "result": result}
+```
+
+4. Ensure the new implementation integrates correctly with the document processing module
+5. Update any related error handling to use the proper FastAPI error handling patterns
+6. Add appropriate logging for file upload operations and errors
+
+# Test Strategy:
+1. Unit tests:
+   - Create unit tests for the new FileObj class to verify it handles various file types correctly
+   - Test error conditions (invalid files, corrupted files, etc.)
+   - Test with mock file objects to ensure proper method calls
+
+2. Integration tests:
+   - Test the endpoint with actual file uploads of different types (PDF, DOCX, TXT)
+   - Verify the endpoint correctly processes files and returns appropriate responses
+   - Test with large files to ensure proper handling of memory and resources
+   - Test concurrent uploads to verify thread safety
+
+3. Manual testing:
+   - Use the Swagger UI to upload files through the API endpoint
+   - Verify the frontend can successfully upload files through this endpoint
+   - Check logs to ensure proper error reporting
+   - Verify temporary files are properly cleaned up after processing
+
+4. Regression testing:
+   - Ensure all existing functionality that depends on file uploads still works correctly
+   - Verify that the document processing pipeline functions correctly with the new implementation

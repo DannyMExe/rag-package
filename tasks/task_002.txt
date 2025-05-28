@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Restructure Codebase
+# Status: done
+# Dependencies: 1
+# Priority: high
+# Description: Reorganize the existing codebase into a standard Python package layout.
+# Details:
+Move existing code files into the new structure as outlined in the PRD. Create directories for `cli`, `core`, `api`, `models`, `utils`, and `web`. Ensure all modules are properly imported in the new structure.
+
+# Test Strategy:
+Run existing unit tests to ensure that the codebase functions correctly after restructuring.
