@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Define Dependencies in requirements.txt
-# Status: pending
+# Status: done
 # Dependencies: 3
 # Priority: medium
 # Description: Create a `requirements.txt` file for development and production dependencies.

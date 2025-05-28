@@ -60,7 +60,7 @@
       "dependencies": [
         3
       ],
-      "status": "pending",
+      "status": "done",
       "subtasks": []
     },
     {
@@ -915,6 +915,433 @@
         32
       ],
       "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 34,
+      "title": "Implement Ollama Client Interface",
+      "description": "Create a client interface to communicate with the Ollama API, supporting all current LLM operations.",
+      "details": "1. Research the latest Ollama API documentation (https://github.com/ollama/ollama/blob/main/docs/api.md).\n2. Implement an OllamaClient class using the `requests` library for HTTP communication.\n3. Define methods for text generation, embeddings, and other LLM operations.\n4. Implement proper error handling and retries for API communication.\n5. Use environment variables or a config file for Ollama connection parameters (e.g., host, port).\n6. Implement model management functions (list, load, unload).\n\nExample client structure:\n```python\nimport requests\n\nclass OllamaClient:\n    def __init__(self, base_url='http://localhost:11434'):\n        self.base_url = base_url\n\n    def generate(self, prompt, model='llama2', **params):\n        response = requests.post(f'{self.base_url}/api/generate', json={'prompt': prompt, 'model': model, **params})\n        response.raise_for_status()\n        return response.json()\n\n    def embeddings(self, text, model='llama2'):\n        response = requests.post(f'{self.base_url}/api/embeddings', json={'prompt': text, 'model': model})\n        response.raise_for_status()\n        return response.json()['embedding']\n\n    # Implement other methods: list_models, load_model, etc.\n```",
+      "testStrategy": "1. Write unit tests for each method of the OllamaClient class.\n2. Mock API responses to test different scenarios (success, errors, timeouts).\n3. Test with actual Ollama instance for integration testing.\n4. Verify error handling and retry logic.\n5. Test with different models and parameter combinations.",
+      "priority": "high",
+      "dependencies": [],
+      "status": "done",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Research and Document Ollama API",
+          "description": "Thoroughly review the latest Ollama API documentation and create a summary of key endpoints and functionalities.",
+          "dependencies": [],
+          "details": "Access the Ollama API documentation at https://github.com/ollama/ollama/blob/main/docs/api.md. Document all available endpoints, request/response formats, and any rate limiting or authentication requirements.\n<info added on 2025-05-28T05:19:13.536Z>\n## Key Ollama API Endpoints:\n1. **Generate Completion** (`POST /api/generate`) - For text generation\n2. **Chat Completion** (`POST /api/chat`) - For conversational AI\n3. **Generate Embeddings** (`POST /api/embed`) - For vector embeddings\n4. **List Models** (`GET /api/tags`) - List available models\n5. **Pull Model** (`POST /api/pull`) - Download models\n6. **Show Model Info** (`POST /api/show`) - Get model details\n\n## Key Features for RAG Implementation:\n- **Embeddings Support**: Full support for embedding models like `mxbai-embed-large`, `nomic-embed-text`, `all-minilm`\n- **Streaming**: Both streaming and non-streaming responses supported\n- **Model Management**: Automatic model loading/unloading with `keep_alive` parameter\n- **Multiple Input Types**: Support for text, images (multimodal), and batch processing\n- **Tool Calling**: Support for function calling (tools) in chat completions\n- **Configuration**: Extensive model parameters (temperature, top_k, top_p, etc.)\n\n## Default Connection:\n- Base URL: `http://localhost:11434`\n- All endpoints use JSON for request/response\n- Requires Ollama server to be running locally\n\n## Compatibility Notes:\n- Python library available: `pip install ollama`\n- REST API compatible with standard HTTP clients\n- OpenAI-compatible endpoints planned for future releases\n\nThis research confirms Ollama is well-suited for replacing llama-cpp-python with full RAG functionality support.\n</info added on 2025-05-28T05:19:13.536Z>",
+          "status": "done",
+          "testStrategy": "Create a comprehensive checklist of API features to ensure all aspects are covered in the implementation."
+        },
+        {
+          "id": 2,
+          "title": "Set Up Project Structure",
+          "description": "Create the basic project structure and set up the development environment for the Ollama client interface.",
+          "dependencies": [
+            1
+          ],
+          "details": "Initialize a new Python project, set up virtual environment, install required dependencies (requests library), and create the main OllamaClient class file.\n<info added on 2025-05-28T05:20:46.911Z>\nThe OllamaClient interface has been successfully implemented in `lawfirm_rag/core/ollama_client.py` with comprehensive API coverage. The implementation includes all major Ollama API endpoints (generate, chat, embed, model management), custom exception handling with retry logic, streaming and non-streaming response support, embedding generation capabilities, model management functions (pull, delete, copy, list), health check methods, and context manager support for proper resource cleanup.\n\nKey features include configurable retry logic, HTTP session management, real-time streaming response parsing, batch embedding support, comprehensive error handling with logging, and default model configurations (llama3.2 for generation, mxbai-embed-large for embeddings). The client supports configuration via environment variables (OLLAMA_BASE_URL) and is now ready to replace the existing llama-cpp-python functionality in the AI engine.\n</info added on 2025-05-28T05:20:46.911Z>",
+          "status": "done",
+          "testStrategy": "Verify that the project structure is correct and all necessary files are present."
+        },
+        {
+          "id": 3,
+          "title": "Implement Core OllamaClient Class",
+          "description": "Create the OllamaClient class with initialization and basic HTTP request handling.",
+          "dependencies": [
+            2
+          ],
+          "details": "Implement the __init__ method with base_url parameter, create methods for GET and POST requests using the requests library, and implement proper error handling and retries.",
+          "status": "done",
+          "testStrategy": "Write unit tests for initialization and basic HTTP methods using mock responses."
+        },
+        {
+          "id": 4,
+          "title": "Implement Text Generation Method",
+          "description": "Create the generate method in the OllamaClient class for text generation requests.",
+          "dependencies": [
+            3
+          ],
+          "details": "Implement the generate method with parameters for prompt, model, and additional options. Handle the API response and return the generated text.",
+          "status": "done",
+          "testStrategy": "Create unit tests with mock API responses to verify correct handling of successful and error responses."
+        },
+        {
+          "id": 5,
+          "title": "Implement Embeddings Method",
+          "description": "Add the embeddings method to the OllamaClient class for generating text embeddings.",
+          "dependencies": [
+            3
+          ],
+          "details": "Create the embeddings method with parameters for input text and model. Process the API response to extract and return the embedding vector.",
+          "status": "done",
+          "testStrategy": "Write unit tests to ensure correct parsing of embedding responses and error handling."
+        },
+        {
+          "id": 6,
+          "title": "Implement Model Management Methods",
+          "description": "Add methods for listing, loading, and unloading models in the OllamaClient class.",
+          "dependencies": [
+            3
+          ],
+          "details": "Create list_models, load_model, and unload_model methods. Implement proper error handling and response processing for each operation.",
+          "status": "done",
+          "testStrategy": "Develop unit tests for each model management method, including scenarios for successful operations and potential errors."
+        },
+        {
+          "id": 7,
+          "title": "Implement Configuration Management",
+          "description": "Create a system for managing Ollama connection parameters using environment variables or a config file.",
+          "dependencies": [
+            3
+          ],
+          "details": "Implement a configuration class or module that reads Ollama connection parameters (host, port) from environment variables or a config file. Update the OllamaClient to use these configurations.",
+          "status": "done",
+          "testStrategy": "Write tests to verify that the client correctly uses configuration values from different sources (default, environment variables, config file)."
+        },
+        {
+          "id": 8,
+          "title": "Create Comprehensive Documentation",
+          "description": "Write detailed documentation for the OllamaClient class and its usage.",
+          "dependencies": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "details": "Create a README.md file with installation instructions, usage examples for all implemented methods, and explanations of configuration options. Include docstrings for all classes and methods in the code.",
+          "status": "done",
+          "testStrategy": "Review documentation for completeness and clarity. Consider using a documentation testing tool to ensure all public methods are documented."
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "title": "Create LLM Abstraction Layer",
+      "description": "Develop an abstraction layer for LLM operations that can work with different backends, including Ollama and llama-cpp-python.",
+      "details": "1. Define an abstract base class `LLMBackend` with methods for common operations.\n2. Implement concrete classes `OllamaBackend` and `LlamaCppBackend`.\n3. Use the Strategy pattern to allow runtime switching between backends.\n4. Implement a factory method to create the appropriate backend based on configuration.\n\nExample implementation:\n```python\nfrom abc import ABC, abstractmethod\n\nclass LLMBackend(ABC):\n    @abstractmethod\n    def generate(self, prompt, **params):\n        pass\n\n    @abstractmethod\n    def embeddings(self, text):\n        pass\n\nclass OllamaBackend(LLMBackend):\n    def __init__(self, client):\n        self.client = client\n\n    def generate(self, prompt, **params):\n        return self.client.generate(prompt, **params)\n\n    def embeddings(self, text):\n        return self.client.embeddings(text)\n\nclass LlamaCppBackend(LLMBackend):\n    # Implement methods using llama-cpp-python\n\nclass LLMFactory:\n    @staticmethod\n    def create_backend(backend_type, **kwargs):\n        if backend_type == 'ollama':\n            return OllamaBackend(OllamaClient(**kwargs))\n        elif backend_type == 'llama-cpp':\n            return LlamaCppBackend(**kwargs)\n        else:\n            raise ValueError(f'Unknown backend type: {backend_type}')\n```",
+      "testStrategy": "1. Write unit tests for the abstract base class and concrete implementations.\n2. Test the factory method with different configurations.\n3. Create mock backends to verify the abstraction works correctly.\n4. Test switching between backends at runtime.\n5. Verify that all existing functionality works with both backends.",
+      "priority": "high",
+      "dependencies": [
+        34
+      ],
+      "status": "done",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Define LLMBackend abstract base class",
+          "description": "Create an abstract base class with common LLM operations",
+          "dependencies": [],
+          "details": "Define abstract methods for generate() and embeddings()",
+          "status": "done",
+          "testStrategy": "Verify that LLMBackend cannot be instantiated directly"
+        },
+        {
+          "id": 2,
+          "title": "Implement OllamaBackend class",
+          "description": "Create a concrete class for Ollama operations",
+          "dependencies": [
+            1
+          ],
+          "details": "Implement generate() and embeddings() methods using Ollama client",
+          "status": "done",
+          "testStrategy": "Test OllamaBackend with mock Ollama client"
+        },
+        {
+          "id": 3,
+          "title": "Implement LlamaCppBackend class",
+          "description": "Create a concrete class for llama-cpp-python operations",
+          "dependencies": [
+            1
+          ],
+          "details": "Implement generate() and embeddings() methods using llama-cpp-python",
+          "status": "done",
+          "testStrategy": "Test LlamaCppBackend with mock llama-cpp-python client"
+        },
+        {
+          "id": 4,
+          "title": "Develop LLMFactory class",
+          "description": "Create a factory class to instantiate appropriate backends",
+          "dependencies": [
+            2,
+            3
+          ],
+          "details": "Implement create_backend() method to return OllamaBackend or LlamaCppBackend based on input",
+          "status": "done",
+          "testStrategy": "Test factory method with different backend types"
+        },
+        {
+          "id": 5,
+          "title": "Implement runtime backend switching",
+          "description": "Use Strategy pattern to allow switching between backends at runtime",
+          "dependencies": [
+            4
+          ],
+          "details": "Create a context class that uses LLMBackend and can switch between implementations",
+          "status": "done",
+          "testStrategy": "Test switching between backends during execution"
+        },
+        {
+          "id": 6,
+          "title": "Add error handling and logging",
+          "description": "Implement robust error handling and logging throughout the abstraction layer",
+          "dependencies": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "details": "Add try-except blocks, custom exceptions, and logging statements",
+          "status": "done",
+          "testStrategy": "Test error scenarios and verify log outputs"
+        },
+        {
+          "id": 7,
+          "title": "Implement configuration management",
+          "description": "Create a configuration system for managing backend settings",
+          "dependencies": [
+            4
+          ],
+          "details": "Develop a config parser to read from file or environment variables",
+          "status": "done",
+          "testStrategy": "Test configuration loading with various settings"
+        },
+        {
+          "id": 8,
+          "title": "Write comprehensive documentation",
+          "description": "Create detailed documentation for the abstraction layer",
+          "dependencies": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "details": "Write API documentation, usage examples, and architecture overview",
+          "status": "done",
+          "testStrategy": "Review documentation for completeness and clarity"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "title": "Refactor Existing Code to Use New Abstraction Layer",
+      "description": "Update the current codebase to use the new LLM abstraction layer, ensuring compatibility with both Ollama and llama-cpp-python backends.",
+      "details": "1. Identify all places in the codebase where llama-cpp-python is directly used.\n2. Replace direct calls with calls to the abstraction layer.\n3. Update configuration handling to support backend selection.\n4. Implement a migration path for existing users' configurations.\n5. Update any model loading or management code to work with both backends.\n\nExample refactoring:\n```python\n# Before\nfrom llama_cpp import Llama\n\nmodel = Llama(model_path='path/to/model.gguf')\noutput = model(prompt, max_tokens=100)\n\n# After\nfrom lawfirm_rag.llm import LLMFactory\n\nconfig = load_config()  # Load from YAML/TOML\nbackend = LLMFactory.create_backend(config['llm_backend'], **config['llm_settings'])\noutput = backend.generate(prompt, max_tokens=100)\n```",
+      "testStrategy": "1. Create a comprehensive test suite covering all refactored code.\n2. Test with both Ollama and llama-cpp-python backends to ensure feature parity.\n3. Verify that existing test cases pass with the new abstraction layer.\n4. Test migration of existing configurations to the new format.\n5. Perform integration tests with the entire RAG pipeline using both backends.",
+      "priority": "high",
+      "dependencies": [
+        35
+      ],
+      "status": "done",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Create LLM Abstraction Layer",
+          "description": "Develop a new abstraction layer that supports both Ollama and llama-cpp-python backends",
+          "dependencies": [],
+          "details": "Design and implement a unified interface for LLM operations, including model loading, text generation, and configuration management",
+          "status": "done",
+          "testStrategy": "Write unit tests for each method in the abstraction layer, ensuring compatibility with both backends"
+        },
+        {
+          "id": 2,
+          "title": "Implement Backend Factory",
+          "description": "Create a factory class to instantiate the appropriate backend based on configuration",
+          "dependencies": [
+            1
+          ],
+          "details": "Develop a LLMFactory class with a create_backend method that returns the correct backend instance based on the provided configuration",
+          "status": "done",
+          "testStrategy": "Test factory with various configuration options to ensure correct backend selection"
+        },
+        {
+          "id": 3,
+          "title": "Update Configuration Handling",
+          "description": "Modify the configuration system to support backend selection and backend-specific settings",
+          "dependencies": [
+            2
+          ],
+          "details": "Extend the existing configuration structure to include a 'llm_backend' option and a 'llm_settings' section for backend-specific parameters\n<info added on 2025-05-28T05:28:26.043Z>\n## Configuration Handling Update - COMPLETED ✅\n\n**IMPLEMENTATION COMPLETED:**\n\n### 1. Extended Default Configuration Structure\n- Added new `llm` section with backend selection support\n- Supports \"auto\", \"ollama\", and \"llama-cpp\" backends\n- Separate configuration sections for each backend:\n  - `llm.ollama`: Ollama-specific settings (base_url, models, timeouts)\n  - `llm.llama_cpp`: llama-cpp-python settings (model_path, context, threads)\n- Maintained legacy `model` section for backward compatibility\n\n### 2. Added Helper Methods to ConfigManager\n- `get_llm_backend()` / `set_llm_backend()`: Backend selection\n- `get_ollama_config()` / `get_llama_cpp_config()`: Backend-specific configs\n- `get_llm_config_for_backend()`: Unified config retrieval\n- `migrate_legacy_config()`: Automatic migration from old format\n\n### 3. Automatic Legacy Migration\n- ConfigManager automatically detects and migrates old configurations\n- Preserves existing user settings while adding new structure\n- Seamless transition for existing users\n\n### 4. Updated AIEngine Factory Function\n- `create_ai_engine_from_config()` now supports both new and legacy formats\n- Intelligent fallback to legacy configuration if new structure not found\n- Proper parameter mapping for both backend types\n\n**CONFIGURATION EXAMPLE:**\n```yaml\nllm:\n  backend: \"auto\"  # or \"ollama\" or \"llama-cpp\"\n  ollama:\n    base_url: \"http://localhost:11434\"\n    default_model: \"llama3.2\"\n    default_embed_model: \"mxbai-embed-large\"\n  llama_cpp:\n    model_path: \"~/.lawfirm-rag/models/default.gguf\"\n    n_ctx: 4096\n    temperature: 0.7\n```\n\n**STATUS**: ✅ Configuration system fully updated and backward compatible\n</info added on 2025-05-28T05:28:26.043Z>",
+          "status": "done",
+          "testStrategy": "Create test cases with different configuration files to verify correct loading and interpretation of settings"
+        },
+        {
+          "id": 4,
+          "title": "Identify Direct llama-cpp-python Usage",
+          "description": "Scan the codebase to locate all instances where llama-cpp-python is directly used",
+          "dependencies": [],
+          "details": "Use static code analysis tools or manual review to identify all import statements, function calls, and object instantiations related to llama-cpp-python\n<info added on 2025-05-28T05:26:41.953Z>\n## Direct llama-cpp-python Usage Analysis\n\n**FINDINGS:**\n✅ **Good News**: No direct llama-cpp-python usage found outside of our abstraction layer!\n\n**Current Usage Patterns:**\n1. **Properly Contained**: All llama-cpp-python imports are contained within `llm_backend.py` abstraction layer\n2. **AIEngine Usage**: Multiple files use AIEngine class but through the proper interface:\n   - `model_manager.py` - Creates AIEngine instances and calls load_model()\n   - `fastapi_app.py` - Uses AIEngine for API endpoints\n   - `query_generator.py` - Uses AIEngine for query generation\n   - `analyze.py` & `query.py` CLI modules - Create AIEngine instances\n\n**Current AIEngine Constructor Pattern:**\n```python\n# Current pattern (needs updating)\nai_engine = AIEngine(str(model_path))  # Old constructor\nai_engine.load_model()\n\n# New pattern (already implemented)\nai_engine = AIEngine(backend_type=\"auto\", model_path=model_path)\nai_engine.load_model()\n```\n\n**Files That Need Updates:**\n1. `model_manager.py` - Update AIEngine instantiation\n2. `fastapi_app.py` - Update initialization function\n3. `analyze.py` - Update AIEngine creation\n4. `query.py` - Update AIEngine creation\n\n**Status**: ✅ No direct llama-cpp-python usage to refactor - only need to update AIEngine constructor calls\n</info added on 2025-05-28T05:26:41.953Z>",
+          "status": "done",
+          "testStrategy": "Develop a script to automatically detect llama-cpp-python usage and run it as part of the CI/CD pipeline"
+        },
+        {
+          "id": 5,
+          "title": "Refactor Model Loading Code",
+          "description": "Update model loading and management code to work with the new abstraction layer",
+          "dependencies": [
+            1,
+            2,
+            4
+          ],
+          "details": "Replace direct Llama class instantiations with calls to the LLMFactory and use the abstraction layer's methods for model management\n<info added on 2025-05-28T05:32:05.449Z>\n## Model Loading Code Refactoring - COMPLETED ✅\n\n**COMPREHENSIVE REFACTORING COMPLETED:**\n\n### 1. ModelManager Refactoring\n- **Updated**: `lawfirm_rag/core/model_manager.py`\n- **Changes**: Replaced direct `AIEngine()` instantiation with `create_ai_engine_from_config()`\n- **Benefits**: Now uses backend auto-detection and configuration-based initialization\n- **Backward Compatibility**: Maintains existing model path override for specific model variants\n\n### 2. FastAPI Application Refactoring\n- **Updated**: `lawfirm_rag/api/fastapi_app.py`\n- **Changes**: Replaced legacy model path loading with new configuration-based system\n- **Features**: \n  - Uses `create_ai_engine_from_config()` for initialization\n  - Comprehensive error handling with fallback\n  - Better logging for debugging backend selection\n- **Result**: API now supports both Ollama and llama-cpp backends automatically\n\n### 3. CLI Analyze Module Refactoring\n- **Updated**: `lawfirm_rag/cli/analyze.py`\n- **Changes**: Replaced direct model path checking with backend-agnostic initialization\n- **Features**:\n  - Uses new configuration system\n  - Clear user feedback about backend selection\n  - Graceful fallback to non-AI analysis\n- **UX**: Better error messages and status reporting\n\n### 4. CLI Query Module Refactoring\n- **Updated**: `lawfirm_rag/cli/query.py`\n- **Changes**: Same pattern as analyze module - configuration-based initialization\n- **Features**:\n  - Backend-agnostic query generation\n  - Improved error handling and user feedback\n  - Maintains all existing functionality\n\n### 5. Refactoring Pattern Applied\n**Old Pattern:**\n```python\nmodel_path = config.get(\"model\", {}).get(\"path\")\nif model_path and Path(model_path).exists():\n    ai_engine = AIEngine(str(model_path))\n    ai_engine.load_model()\n```\n\n**New Pattern:**\n```python\nfrom ..core.ai_engine import create_ai_engine_from_config\nai_engine = create_ai_engine_from_config(config)\nai_engine.load_model()\n```\n\n### 6. Benefits Achieved\n- **Backend Flexibility**: All components now support both Ollama and llama-cpp backends\n- **Configuration-Driven**: Backend selection controlled by configuration, not hardcoded paths\n- **Auto-Detection**: Intelligent backend selection based on availability\n- **Backward Compatibility**: Legacy configurations still work via automatic migration\n- **Error Resilience**: Better error handling and fallback mechanisms\n- **User Experience**: Clear feedback about which backend is being used\n</info added on 2025-05-28T05:32:05.449Z>",
+          "status": "done",
+          "testStrategy": "Create integration tests that verify successful model loading with both backends"
+        },
+        {
+          "id": 6,
+          "title": "Refactor Text Generation Code",
+          "description": "Replace direct calls to llama-cpp-python's generation methods with abstraction layer calls",
+          "dependencies": [
+            1,
+            2,
+            4
+          ],
+          "details": "Update all text generation code to use the new abstraction layer's generate method, ensuring compatibility with both backends\n<info added on 2025-05-28T05:33:26.379Z>\n## Text Generation Code Refactoring - COMPLETED ✅\n\n**ANALYSIS RESULTS:**\n\n### 1. Current State Assessment\n- **Text Generation Methods**: Already properly implemented using abstraction layer\n- **AIEngine.generate_response()**: Uses `self.llm_context.generate()` (abstraction layer)\n- **AIEngine.generate_chat_response()**: Uses `self.llm_context.chat()` (abstraction layer)\n- **AIEngine.generate_embeddings()**: Uses `self.llm_context.embed()` (abstraction layer)\n\n### 2. Code Review Findings\n**✅ ALREADY REFACTORED:**\n- All text generation methods in `ai_engine.py` use the LLM abstraction layer\n- No direct backend calls found in generation methods\n- Proper error handling with abstraction layer exceptions\n- Streaming response support maintained through abstraction\n\n### 3. Search Results Analysis\n- **No Direct Backend Calls**: Comprehensive search found no direct llama-cpp-python generation calls\n- **Proper Abstraction**: All generation code uses `llm_context` methods\n- **Clean Implementation**: Text generation is backend-agnostic\n\n### 4. Current Implementation Pattern\n```python\n# ✅ CORRECT: Already using abstraction layer\ndef generate_response(self, prompt: str, **kwargs) -> str:\n    response = self.llm_context.generate(\n        prompt=prompt,\n        model=model,\n        max_tokens=max_tokens,\n        temperature=temperature,\n        **kwargs\n    )\n    return self._clean_response(response_text)\n```\n\n### 5. Features Already Implemented\n- **Backend Agnostic**: Works with both Ollama and llama-cpp backends\n- **Streaming Support**: Handles both streaming and non-streaming responses\n- **Error Handling**: Proper exception handling with abstraction layer errors\n- **Parameter Passing**: Flexible parameter passing to backends\n- **Response Cleaning**: Consistent response post-processing\n\n### 6. Methods Verified\n- `generate_response()` - ✅ Uses abstraction layer\n- `generate_chat_response()` - ✅ Uses abstraction layer  \n- `generate_embeddings()` - ✅ Uses abstraction layer\n- `analyze_document()` - ✅ Uses abstraction layer (calls generate_response)\n- `generate_search_query()` - ✅ Uses abstraction layer (calls generate_response)\n\n**STATUS**: ✅ Text generation code is already properly refactored and using the abstraction layer. No additional work needed.\n</info added on 2025-05-28T05:33:26.379Z>",
+          "status": "done",
+          "testStrategy": "Develop test cases that compare output from the old and new implementations to ensure consistency"
+        },
+        {
+          "id": 7,
+          "title": "Implement Migration Path",
+          "description": "Create a migration tool or script for existing users to update their configurations",
+          "dependencies": [
+            3
+          ],
+          "details": "Develop a utility that can read existing configuration files, detect the current backend, and generate an updated configuration file compatible with the new abstraction layer\n<info added on 2025-05-28T05:30:06.784Z>\n## Migration Path Implementation - COMPLETED ✅\n\n**COMPREHENSIVE MIGRATION UTILITY CREATED:**\n\n### 1. ConfigMigrator Class\n- **Version Detection**: Automatically detects legacy vs new configuration formats\n- **Smart Migration**: Preserves user settings while adding new LLM structure\n- **Backup Creation**: Automatic timestamped backups before migration\n- **Multiple Formats**: Supports YAML and JSON configuration files\n\n### 2. Backend Compatibility Detection\n- **System Analysis**: Checks availability of Ollama and llama-cpp-python\n- **Server Status**: Detects if Ollama server is running\n- **Smart Recommendations**: Suggests best backend based on system state and existing files\n\n### 3. CLI Migration Tool\n- **Standalone Script**: Can be run as `python -m lawfirm_rag.utils.migration`\n- **Command Line Options**:\n  - Input/output file paths\n  - Backup control (--no-backup)\n  - Verbose output (-v)\n- **User-Friendly Output**: Clear success/error messages and migration notes\n\n### 4. Migration Features\n- **Legacy Preservation**: Keeps old 'model' section for backward compatibility\n- **Setting Migration**: Maps all legacy settings to new LLM structure\n- **Default Creation**: Creates complete new config if format unknown\n- **Error Handling**: Comprehensive error reporting and recovery\n\n### 5. Usage Examples\n```bash\n# Basic migration\npython -m lawfirm_rag.utils.migration config.yaml\n\n# Verbose migration with custom output\npython -m lawfirm_rag.utils.migration config.yaml -o new_config.yaml -v\n\n# Migration without backup\npython -m lawfirm_rag.utils.migration config.yaml --no-backup\n```\n\n### 6. Integration Points\n- **ConfigManager**: Automatic migration on initialization\n- **Standalone Tool**: Manual migration for advanced users\n- **Backend Detection**: Helps users choose optimal configuration\n\n**STATUS**: ✅ Complete migration path implemented with both automatic and manual options\n</info added on 2025-05-28T05:30:06.784Z>",
+          "status": "done",
+          "testStrategy": "Test the migration tool with various existing configuration formats and verify the correctness of the generated configurations"
+        },
+        {
+          "id": 8,
+          "title": "Update Documentation and Examples",
+          "description": "Revise all relevant documentation and code examples to reflect the new abstraction layer usage",
+          "dependencies": [
+            1,
+            2,
+            3,
+            5,
+            6
+          ],
+          "details": "Update user guides, API documentation, and code samples to demonstrate how to use the new abstraction layer, configure backends, and migrate existing code\n<info added on 2025-05-28T05:46:57.481Z>\n## Terminal Command Issues Pattern - CRITICAL LEARNING\n\n**PROBLEM IDENTIFIED:**\n- Commands getting corrupted with `[200~` escape sequences\n- This is NOT a terminal corruption issue - it's in my command generation\n- Pattern: `[200~command~` instead of clean `command`\n\n**SYMPTOMS:**\n```bash\n$ [200~ollama list~\nbash: [200~ollama: command not found\n```\n\n**ROOT CAUSE:**\n- Bracketed paste mode escape sequences being injected into commands\n- This is happening in my tool call generation, not the user's terminal\n- Need to ensure clean command strings without escape sequences\n\n**SOLUTION:**\n- Always generate clean command strings\n- Never include escape sequences in terminal commands\n- If terminal appears corrupted, the issue is in command generation, not terminal state\n\n**RULE FOR FUTURE:**\n- When seeing `[200~command~` pattern, restart and use clean commands\n- Don't blame \"terminal corruption\" - fix command generation\n- Document this pattern to avoid repeating the mistake\n</info added on 2025-05-28T05:46:57.481Z>",
+          "status": "done",
+          "testStrategy": "Conduct a documentation review and create a set of runnable examples to ensure accuracy and completeness"
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "title": "Update CLI Interface for Ollama Integration",
+      "description": "Modify the command-line interface to support Ollama backend configuration and provide a seamless experience for users.",
+      "details": "1. Update CLI argument parsing to include Ollama-specific options.\n2. Implement a command to switch between backends (e.g., `lawfirm-rag config set-backend ollama`).\n3. Add a command to check Ollama connection status.\n4. Update help messages and documentation for new Ollama-related commands.\n5. Ensure backward compatibility for existing CLI commands.\n\nExample CLI updates:\n```python\nimport click\nfrom lawfirm_rag.config import Config\nfrom lawfirm_rag.llm import LLMFactory\n\n@click.group()\ndef cli():\n    pass\n\n@cli.command()\n@click.option('--backend', type=click.Choice(['ollama', 'llama-cpp']), default='ollama')\n@click.option('--ollama-host', default='http://localhost:11434')\ndef set_backend(backend, ollama_host):\n    config = Config.load()\n    config.set('llm_backend', backend)\n    if backend == 'ollama':\n        config.set('llm_settings.ollama_host', ollama_host)\n    config.save()\n    click.echo(f'Backend set to {backend}')\n\n@cli.command()\ndef check_ollama():\n    backend = LLMFactory.create_backend('ollama')\n    try:\n        backend.client.list_models()\n        click.echo('Ollama connection successful')\n    except Exception as e:\n        click.echo(f'Ollama connection failed: {str(e)}')\n\nif __name__ == '__main__':\n    cli()\n```",
+      "testStrategy": "1. Write unit tests for new CLI commands and options.\n2. Test CLI with various combinations of arguments and configurations.\n3. Verify that help messages are correct and informative.\n4. Test backward compatibility with existing command usage.\n5. Perform user acceptance testing with sample workflows.",
+      "priority": "medium",
+      "dependencies": [
+        36
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 38,
+      "title": "Implement Ollama Model Management",
+      "description": "Create functionality to manage Ollama models, including listing available models, downloading new models, and handling model-specific configurations.",
+      "details": "1. Extend the OllamaClient to include model management methods.\n2. Implement commands to list, download, and remove Ollama models.\n3. Create a model configuration system to map model names to Ollama models.\n4. Update the RAG system to use the new model management functionality.\n5. Implement caching for model information to reduce API calls.\n\nExample implementation:\n```python\nclass OllamaClient:\n    # ... existing methods ...\n\n    def list_models(self):\n        response = requests.get(f'{self.base_url}/api/tags')\n        response.raise_for_status()\n        return response.json()['models']\n\n    def download_model(self, model_name):\n        response = requests.post(f'{self.base_url}/api/pull', json={'name': model_name})\n        response.raise_for_status()\n        return response.json()\n\nclass ModelManager:\n    def __init__(self, client):\n        self.client = client\n        self.config = Config.load()\n\n    def get_model_config(self, model_name):\n        model_configs = self.config.get('model_configs', {})\n        return model_configs.get(model_name, {'ollama_model': model_name})\n\n    def set_model_config(self, model_name, ollama_model, **params):\n        model_configs = self.config.get('model_configs', {})\n        model_configs[model_name] = {'ollama_model': ollama_model, **params}\n        self.config.set('model_configs', model_configs)\n        self.config.save()\n\n@cli.command()\ndef list_models():\n    client = OllamaClient()\n    models = client.list_models()\n    click.echo('Available models:')\n    for model in models:\n        click.echo(f'- {model}')\n\n@cli.command()\n@click.argument('model_name')\ndef download_model(model_name):\n    client = OllamaClient()\n    result = client.download_model(model_name)\n    click.echo(f'Model {model_name} downloaded successfully')\n```",
+      "testStrategy": "1. Test model listing functionality with mock API responses.\n2. Verify model download process and error handling.\n3. Test model configuration management, including saving and loading.\n4. Perform integration tests with actual Ollama instance.\n5. Test CLI commands for model management.\n6. Verify that the RAG system correctly uses configured models.",
+      "priority": "medium",
+      "dependencies": [
+        34
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 39,
+      "title": "Update Web Interface for Ollama Integration",
+      "description": "Modify the web interface to support Ollama backend configuration and provide model management features.",
+      "details": "1. Update the FastAPI backend to use the new LLM abstraction layer.\n2. Add API endpoints for Ollama-specific operations (e.g., listing models, checking connection).\n3. Modify the frontend to include Ollama configuration options.\n4. Implement a model selection interface in the web UI.\n5. Add error handling and user feedback for Ollama-related operations.\n\nExample FastAPI updates:\n```python\nfrom fastapi import FastAPI, HTTPException\nfrom lawfirm_rag.llm import LLMFactory\nfrom lawfirm_rag.config import Config\n\napp = FastAPI()\n\n@app.get('/api/models')\nasync def list_models():\n    try:\n        backend = LLMFactory.create_backend('ollama')\n        models = backend.client.list_models()\n        return {'models': models}\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n@app.post('/api/config/backend')\nasync def set_backend(backend: str):\n    config = Config.load()\n    config.set('llm_backend', backend)\n    config.save()\n    return {'message': f'Backend set to {backend}'}\n\n# Update existing endpoints to use the new abstraction layer\n@app.post('/api/analyze')\nasync def analyze_document(document: str):\n    config = Config.load()\n    backend = LLMFactory.create_backend(config.get('llm_backend'))\n    # Use backend for document analysis\n    # ...\n```\n\nFrontend updates (using React as an example):\n```jsx\nimport React, { useState, useEffect } from 'react';\nimport axios from 'axios';\n\nfunction ModelSelector() {\n  const [models, setModels] = useState([]);\n  const [selectedModel, setSelectedModel] = useState('');\n\n  useEffect(() => {\n    axios.get('/api/models').then(response => setModels(response.data.models));\n  }, []);\n\n  const handleModelChange = (event) => {\n    setSelectedModel(event.target.value);\n    // Update backend configuration\n    axios.post('/api/config/model', { model: event.target.value });\n  };\n\n  return (\n    <select value={selectedModel} onChange={handleModelChange}>\n      {models.map(model => (\n        <option key={model} value={model}>{model}</option>\n      ))}\n    </select>\n  );\n}\n```",
+      "testStrategy": "1. Write unit tests for new API endpoints.\n2. Test frontend components with mocked API responses.\n3. Perform end-to-end testing of the web interface with Ollama integration.\n4. Verify error handling and user feedback mechanisms.\n5. Test model selection and configuration persistence.\n6. Conduct cross-browser testing for the updated web interface.",
+      "priority": "medium",
+      "dependencies": [
+        37,
+        38
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 40,
+      "title": "Implement Caching and Performance Optimizations",
+      "description": "Develop a caching system for Ollama responses and implement performance optimizations to ensure the system remains efficient with the new backend.",
+      "details": "1. Implement a caching layer using Redis or a similar in-memory data store.\n2. Cache frequently used embeddings and generation results.\n3. Implement cache invalidation strategies based on model updates or time expiration.\n4. Optimize batch processing for document analysis using Ollama's capabilities.\n5. Implement parallel processing for multiple documents when possible.\n\nExample caching implementation:\n```python\nimport redis\nfrom functools import lru_cache\n\nclass CacheManager:\n    def __init__(self, redis_url='redis://localhost:6379'):\n        self.redis = redis.from_url(redis_url)\n\n    def get(self, key):\n        return self.redis.get(key)\n\n    def set(self, key, value, expire=3600):\n        self.redis.set(key, value, ex=expire)\n\n@lru_cache(maxsize=100)\ndef get_embedding(text, model):\n    cache_key = f'embedding:{model}:{hash(text)}'\n    cache_manager = CacheManager()\n    cached_result = cache_manager.get(cache_key)\n    if cached_result:\n        return cached_result\n    \n    backend = LLMFactory.create_backend('ollama')\n    embedding = backend.embeddings(text, model=model)\n    cache_manager.set(cache_key, embedding)\n    return embedding\n\n# Optimize batch processing\nasync def process_documents(documents):\n    backend = LLMFactory.create_backend('ollama')\n    tasks = [asyncio.create_task(backend.generate(doc)) for doc in documents]\n    results = await asyncio.gather(*tasks)\n    return results\n```",
+      "testStrategy": "1. Benchmark performance before and after implementing caching.\n2. Test cache hit rates and invalidation strategies.\n3. Verify that caching doesn't introduce inconsistencies in results.\n4. Test parallel processing with varying numbers of documents.\n5. Conduct load testing to ensure system stability under high concurrency.\n6. Profile memory usage to detect any leaks or excessive consumption.",
+      "priority": "medium",
+      "dependencies": [
+        36,
+        38
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 41,
+      "title": "Enhance Error Handling and Logging",
+      "description": "Improve error handling throughout the system and implement comprehensive logging for better diagnostics and user feedback.",
+      "details": "1. Implement a custom exception hierarchy for different error types.\n2. Use structured logging with contextual information.\n3. Implement a global error handler for the FastAPI application.\n4. Create user-friendly error messages for common issues.\n5. Implement logging rotation and archiving.\n\nExample implementation:\n```python\nimport logging\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import JSONResponse\n\nclass OllamaConnectionError(Exception):\n    pass\n\nclass ModelNotFoundError(Exception):\n    pass\n\nlogging.basicConfig(level=logging.INFO,\n                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',\n                    filename='lawfirm_rag.log',\n                    filemode='a')\nlogger = logging.getLogger(__name__)\n\napp = FastAPI()\n\n@app.exception_handler(OllamaConnectionError)\nasync def ollama_connection_exception_handler(request: Request, exc: OllamaConnectionError):\n    logger.error(f'Ollama connection error: {str(exc)}')\n    return JSONResponse(\n        status_code=503,\n        content={'message': 'Unable to connect to Ollama. Please check if Ollama is running.'}\n    )\n\n@app.exception_handler(ModelNotFoundError)\nasync def model_not_found_exception_handler(request: Request, exc: ModelNotFoundError):\n    logger.error(f'Model not found: {str(exc)}')\n    return JSONResponse(\n        status_code=404,\n        content={'message': f'The requested model was not found. Available models: {available_models}'}\n    )\n\n@app.middleware('http')\nasync def log_requests(request: Request, call_next):\n    logger.info(f'Request: {request.method} {request.url}')\n    response = await call_next(request)\n    logger.info(f'Response: {response.status_code}')\n    return response\n```",
+      "testStrategy": "1. Write unit tests for custom exceptions and error handlers.\n2. Test logging output for various scenarios (info, warnings, errors).\n3. Verify that sensitive information is not logged.\n4. Test log rotation and archiving functionality.\n5. Conduct integration tests to ensure proper error propagation.\n6. Verify that error messages are user-friendly and actionable.",
+      "priority": "medium",
+      "dependencies": [
+        36,
+        37,
+        39
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 42,
+      "title": "Create Migration Guide and Update Documentation",
+      "description": "Develop a comprehensive migration guide for existing users and update all documentation to reflect the new Ollama integration.",
+      "details": "1. Write a step-by-step migration guide for users upgrading from the llama-cpp-python version.\n2. Update the README.md with new installation instructions and Ollama requirements.\n3. Revise API documentation to include new Ollama-related endpoints and parameters.\n4. Create tutorials for common use cases with the new Ollama backend.\n5. Update any existing user guides or manuals.\n6. Prepare release notes detailing the changes and improvements.\n\nMigration guide outline:\n1. Introduction to the Ollama integration\n2. Prerequisites (installing Ollama, supported versions)\n3. Backing up existing configurations and data\n4. Updating the lawfirm-rag package\n5. Configuring the Ollama backend\n6. Migrating existing models and configurations\n7. Verifying the installation and troubleshooting common issues\n\nExample README.md updates:\n```markdown\n# LawFirm-RAG Package\n\n## New in version 2.0: Ollama Integration\n\nWe've migrated from llama-cpp-python to Ollama for improved performance and easier setup.\n\n### Prerequisites\n\n- Python 3.8+\n- [Ollama](https://github.com/ollama/ollama) installed and running\n\n### Installation\n\n```bash\npip install lawfirm-rag\n```\n\n### Quick Start\n\n1. Ensure Ollama is running\n2. Set up the Ollama backend:\n   ```bash\n   lawfirm-rag config set-backend ollama\n   ```\n3. Run your first analysis:\n   ```bash\n   lawfirm-rag analyze document.pdf\n   ```\n\n### Migrating from 1.x\n\nIf you're upgrading from a previous version, please see our [Migration Guide](MIGRATION.md).\n```",
+      "testStrategy": "1. Have team members follow the migration guide to verify its accuracy.\n2. Test code samples and commands in the documentation for correctness.\n3. Review documentation for clarity and completeness.\n4. Verify that all new features and changes are properly documented.\n5. Conduct user acceptance testing with the updated documentation.\n6. Gather feedback from beta testers on the migration process and documentation clarity.",
+      "priority": "high",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 43,
+      "title": "Conduct Thorough Testing and Quality Assurance",
+      "description": "Perform comprehensive testing of the entire system with the new Ollama integration, including unit tests, integration tests, and end-to-end testing.",
+      "details": "1. Update and expand the existing test suite to cover new Ollama-related functionality.\n2. Implement integration tests that verify the interaction between different components.\n3. Create end-to-end tests that simulate real-world usage scenarios.\n4. Perform cross-platform testing (Windows, macOS, Linux).\n5. Conduct performance benchmarks comparing the new Ollama backend with the previous implementation.\n6. Test backward compatibility with existing data and configurations.\n\nExample test cases:\n```python\nimport unittest\nfrom unittest.mock import patch\nfrom lawfirm_rag.llm import LLMFactory, OllamaBackend\n\nclass TestOllamaIntegration(unittest.TestCase):\n    def setUp(self):\n        self.backend = LLMFactory.create_backend('ollama')\n\n    @patch('lawfirm_rag.llm.OllamaClient.generate')\n    def test_text_generation(self, mock_generate):\n        mock_generate.return_value = {'response': 'Generated text'}\n        result = self.backend.generate('Test prompt')\n        self.assertEqual(result, 'Generated text')\n        mock_generate.assert_called_once_with('Test prompt')\n\n    @patch('lawfirm_rag.llm.OllamaClient.embeddings')\n    def test_embeddings(self, mock_embeddings):\n        mock_embeddings.return_value = [0.1, 0.2, 0.3]\n        result = self.backend.embeddings('Test text')\n        self.assertEqual(result, [0.1, 0.2, 0.3])\n        mock_embeddings.assert_called_once_with('Test text')\n\n    def test_model_switching(self):\n        self.backend.set_model('llama2')\n        self.assertEqual(self.backend.current_model, 'llama2')\n        self.backend.set_model('gpt4')\n        self.assertEqual(self.backend.current_model, 'gpt4')\n\n    @patch('lawfirm_rag.llm.OllamaClient.list_models')\n    def test_model_listing(self, mock_list_models):\n        mock_list_models.return_value = ['model1', 'model2']\n        models = self.backend.list_available_models()\n        self.assertEqual(models, ['model1', 'model2'])\n        mock_list_models.assert_called_once()\n\nif __name__ == '__main__':\n    unittest.main()\n```\n\nPerformance benchmark script:\n```python\nimport time\nfrom lawfirm_rag.llm import LLMFactory\n\ndef benchmark_generation(backend, prompt, iterations=100):\n    start_time = time.time()\n    for _ in range(iterations):\n        backend.generate(prompt)\n    end_time = time.time()\n    return (end_time - start_time) / iterations\n\nollama_backend = LLMFactory.create_backend('ollama')\nllama_cpp_backend = LLMFactory.create_backend('llama-cpp')\n\nprompt = 'Analyze the legal implications of AI in healthcare'\n\nollama_time = benchmark_generation(ollama_backend, prompt)\nllama_cpp_time = benchmark_generation(llama_cpp_backend, prompt)\n\nprint(f'Ollama average generation time: {ollama_time:.4f} seconds')\nprint(f'llama-cpp average generation time: {llama_cpp_time:.4f} seconds')\n```",
+      "testStrategy": "1. Run the full test suite on multiple platforms (Windows, macOS, Linux).\n2. Conduct code reviews for all new tests to ensure coverage and correctness.\n3. Perform manual testing of edge cases and complex scenarios.\n4. Use code coverage tools to identify and address any gaps in test coverage.\n5. Run performance benchmarks and compare results with previous implementation.\n6. Conduct user acceptance testing with a group of beta testers.\n7. Document all test results and address any issues before final release.",
+      "priority": "high",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42
+      ],
+      "status": "pending",
       "subtasks": []
     }
   ]

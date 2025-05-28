@@ -5,12 +5,13 @@ A comprehensive Python package for document analysis and query generation using 
 ## Features
 
 - 📄 **Document Processing**: Extract and analyze text from various legal document formats
-- 🤖 **AI-Powered Analysis**: Local GGUF model support for document summarization and legal issue identification
+- 🤖 **AI-Powered Analysis**: Support for both Ollama and local GGUF models for document summarization and legal issue identification
 - 🔍 **Query Generation**: Generate optimized search queries for legal databases (Westlaw, LexisNexis, Casetext)
 - 🌐 **Web Interface**: Modern web UI for document upload and analysis
 - 🔧 **CLI Tools**: Command-line interface for batch processing
 - 💾 **Model Management**: Download, load, and manage AI models with progress tracking
 - 🏗️ **Pip Installable**: Clean package structure for easy installation and distribution
+- 🚀 **Ollama Integration**: Easy setup with Ollama for improved installation experience
 
 ## Quick Start
 
@@ -18,8 +19,11 @@ A comprehensive Python package for document analysis and query generation using 
 
 #### From PyPI (Recommended)
 ```bash
-# Install directly from PyPI
-pip install lawfirm-rag-package
+# Install the package (Ollama backend only)
+pip install rag-package
+
+# Or install with GGUF backend support (requires compilation)
+pip install rag-package[gguf]
 ```
 
 #### From GitHub Repository
@@ -32,12 +36,37 @@ cd rag-package
 pip install -e .
 ```
 
+### AI Backend Setup
+
+The package supports two AI backends:
+
+#### Option 1: Ollama (Recommended - Easier Setup)
+1. **Install Ollama**: Download from [ollama.ai](https://ollama.ai)
+2. **Pull a model**: 
+   ```bash
+   # For legal documents (recommended)
+   ollama run hf.co/TheBloke/law-chat-GGUF:Q4_0
+   
+   # Or use a general model
+   ollama pull llama3.2
+   ```
+3. **Configure**: The package will auto-detect Ollama and use it by default
+
+#### Option 2: Local GGUF Models (Advanced)
+1. **Install GGUF support**: `pip install rag-package[gguf]` (requires compilation tools)
+2. **Download models**: Place GGUF files in the `models/` directory
+3. **Recommended**: [Law Chat GGUF](https://huggingface.co/TheBloke/law-chat-GGUF) (Q4_0 variant)
+4. **Configure**: Set `backend: "llama-cpp"` in your config file
+
 ### Basic Usage
 
 #### Web Interface
 ```bash
 # Start the web server
 rag serve
+
+# Or using Python module
+python -m uvicorn lawfirm_rag.api.fastapi_app:app --reload
 
 # Open http://localhost:8000/app in your browser
 ```
@@ -86,11 +115,36 @@ Then restart Git Bash or run `source ~/.bashrc`
 
 ## AI Model Setup
 
-The package supports local GGUF models for privacy and offline operation:
+The package supports multiple AI backends for flexibility and ease of use:
 
-1. **Via Web Interface**: Use the Model Management section to download models
-2. **Manual Download**: Place GGUF files in the `models/` directory
-3. **Recommended Model**: [Law Chat GGUF](https://huggingface.co/TheBloke/law-chat-GGUF) (Q4_0 variant recommended)
+### Ollama Backend (Recommended)
+- **Easy Installation**: No compilation required
+- **Model Management**: Built-in model downloading and management
+- **Better Performance**: Optimized for local inference
+- **Setup**: Install Ollama and pull models as shown above
+
+### Local GGUF Backend (Advanced)
+- **Direct Model Loading**: Load GGUF files directly
+- **Full Control**: Manual model management
+- **Setup**: 
+  1. Via Web Interface: Use the Model Management section to download models
+  2. Manual Download: Place GGUF files in the `models/` directory
+  3. Recommended Model: [Law Chat GGUF](https://huggingface.co/TheBloke/law-chat-GGUF) (Q4_0 variant)
+
+### Backend Selection
+The package automatically detects the best available backend:
+1. **Ollama** (if server is running and models are available)
+2. **Local GGUF** (if models are found in the models directory)
+3. **Fallback** (graceful degradation with limited functionality)
+
+You can force a specific backend by creating a `config.yaml` file:
+```yaml
+llm:
+  backend: ollama  # or "llama-cpp" for GGUF files
+  ollama:
+    base_url: http://localhost:11434
+    default_model: law-chat
+```
 
 ## Architecture
 
@@ -163,19 +217,41 @@ pytest --cov=lawfirm_rag
 
 ## Configuration
 
-Configuration is managed through:
-- **`.taskmasterconfig`**: AI model settings and parameters
-- **`.env`**: API keys and sensitive configuration (see `.env.example`)
+Configuration is managed through multiple methods:
+
+### Configuration Files
+- **`config.yaml`**: Main configuration file (project root)
+- **`~/.lawfirm-rag/config.yaml`**: User-level configuration
+- **`.env`**: Environment variables and API keys
+
+### LLM Backend Configuration
+```yaml
+# config.yaml
+llm:
+  backend: ollama  # "auto", "ollama", or "llama-cpp"
+  ollama:
+    base_url: http://localhost:11434
+    default_model: law-chat
+    default_embed_model: mxbai-embed-large
+    timeout: 30
+    max_retries: 3
+  llama_cpp:
+    model_path: ~/.lawfirm-rag/models/default.gguf
+    n_ctx: 4096
+    temperature: 0.7
+```
 
 ### Environment Variables
 ```bash
-# AI Provider API Keys (optional - for cloud models)
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Legacy GGUF Model Settings (if using llama-cpp backend)
+LAWFIRM_RAG_CONFIG_PATH=./config.yaml
+
+# Optional: API keys for cloud models (future feature)
 ANTHROPIC_API_KEY=your_key_here
 OPENAI_API_KEY=your_key_here
-PERPLEXITY_API_KEY=your_key_here
-
-# Local model settings
-OLLAMA_BASE_URL=http://localhost:11434/api
 ```
 
 ## API Reference
@@ -193,16 +269,21 @@ OLLAMA_BASE_URL=http://localhost:11434/api
 
 ```python
 from lawfirm_rag.core import DocumentProcessor, AIEngine, QueryGenerator
+from lawfirm_rag.core.ai_engine import create_ai_engine_from_config
+from lawfirm_rag.utils.config import ConfigManager
 
-# Initialize components
+# Initialize components with automatic backend detection
+config_manager = ConfigManager()
+config = config_manager.get_config()
+
 processor = DocumentProcessor()
-ai_engine = AIEngine(\"path/to/model.gguf\")
+ai_engine = create_ai_engine_from_config(config)  # Auto-detects Ollama or GGUF
 query_gen = QueryGenerator(ai_engine)
 
-# Process document
-text = processor.extract_text(\"document.pdf\")
-summary = ai_engine.analyze_document(text, \"summary\")
-query = query_gen.generate_query(text, \"westlaw\")
+# Manual backend selection
+ai_engine = AIEngine(backend_type="ollama", model_name="law-chat")
+# or
+ai_engine = AIEngine(backend_type="llama-cpp", model_path="path/to/model.gguf")
 ```
 
 ## License

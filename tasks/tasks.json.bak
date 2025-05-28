@@ -631,9 +631,7 @@
       "id": 28,
       "title": "Implement Model Loading and Selection Functionality",
       "description": "Develop a system to load and select downloaded GGUF models, connecting them to the AI engine. This includes backend API, frontend UI, and integration with the existing AIEngine class.",
-      "details": "1. Backend Model Loading API:\n   - Create new endpoints in the FastAPI server (e.g., `/api/models/load`, `/api/models/unload`, `/api/models/list`)\n   - Implement functions to load and unload models from the downloaded models directory\n   - Use the `llama_cpp` library to handle GGUF model loading\n\n2. Model Discovery:\n   - Create a function to scan the downloaded models directory and detect available GGUF models\n   - Store model metadata (name, path, size) in the SQLite database\n\n3. Frontend Model Selection:\n   - Extend the existing Model Management modal in the frontend\n   - Add a dropdown or list to display available models\n   - Implement buttons for loading/unloading models\n   - Use AJAX calls to interact with the backend API\n\n4. AI Engine Integration:\n   - Modify the AIEngine class to support dynamic model loading\n   - Add methods to switch between loaded models\n   - Ensure proper initialization and cleanup of models\n\n5. Status Updates:\n   - Implement a WebSocket connection for real-time status updates\n   - Send model loading progress and status to the frontend\n   - Update UI indicators when models are loaded/unloaded\n\n6. Error Handling:\n   - Implement try-except blocks for model loading operations\n   - Create custom exceptions for various failure scenarios (e.g., InvalidModelError, ModelLoadError)\n   - Display user-friendly error messages in the frontend\n\n7. Memory Management:\n   - Implement a mechanism to unload models from memory when switching\n   - Use Python's garbage collection to ensure proper cleanup\n   - Monitor and limit the number of simultaneously loaded models based on available system resources\n\n8. Configuration:\n   - Add new configuration options for model directory path and maximum loaded models\n   - Update the configuration file and parsing logic\n\n9. CLI Integration:\n   - Extend the CLI to support model loading and unloading operations\n   - Add a new subcommand for model management (e.g., `lawchat models list`, `lawchat models load &lt;model_name&gt;`)\n\n10. Documentation:\n    - Update API documentation to include new model management endpoints\n    - Add user guide sections for model loading and selection\n    - Include developer documentation on extending the model loading functionality",
-      "testStrategy": "1. Unit Tests:\n   - Write tests for model discovery function\n   - Test model loading/unloading functions with mock GGUF files\n   - Verify AIEngine class modifications\n\n2. Integration Tests:\n   - Test the interaction between backend API and SQLite storage\n   - Verify proper integration of model loading with the AI engine\n\n3. API Tests:\n   - Use pytest to test new API endpoints\n   - Verify correct responses for various scenarios (success, failure, invalid input)\n\n4. Frontend Tests:\n   - Use Jest and React Testing Library to test new UI components\n   - Verify correct rendering of model list and status indicators\n\n5. End-to-End Tests:\n   - Create Selenium or Cypress tests to simulate user interactions\n   - Test the complete flow of discovering, loading, and using a model\n\n6. Performance Tests:\n   - Measure memory usage during model loading and switching\n   - Test with multiple large models to ensure efficient resource management\n\n7. Error Handling Tests:\n   - Simulate various error conditions (e.g., corrupt model file, insufficient memory)\n   - Verify appropriate error messages are displayed\n\n8. CLI Tests:\n   - Test new CLI commands for model management\n   - Verify correct output and error handling\n\n9. Documentation Review:\n   - Ensure all new functionality is properly documented\n   - Verify accuracy of API documentation and user guide\n\n10. Manual Testing:\n    - Perform manual tests with real GGUF models\n    - Verify smooth user experience in the frontend\n    - Test edge cases and potential user mistakes",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         27,
         9,
@@ -642,6 +640,615 @@
         11
       ],
       "priority": "high",
+      "details": "1. Backend Model Loading API:\n   - Create new endpoints in the FastAPI server (e.g., `/api/models/load`, `/api/models/unload`, `/api/models/list`)\n   - Implement functions to load and unload models from the downloaded models directory\n   - Use the `llama_cpp` library to handle GGUF model loading\n\n2. Model Discovery:\n   - Create a function to scan the downloaded models directory and detect available GGUF models\n   - Store model metadata (name, path, size) in the SQLite database\n\n3. Frontend Model Selection:\n   - Extend the existing Model Management modal in the frontend\n   - Add a dropdown or list to display available models\n   - Implement buttons for loading/unloading models\n   - Use AJAX calls to interact with the backend API\n\n4. AI Engine Integration:\n   - Modify the AIEngine class to support dynamic model loading\n   - Add methods to switch between loaded models\n   - Ensure proper initialization and cleanup of models\n\n5. Status Updates:\n   - Implement a WebSocket connection for real-time status updates\n   - Send model loading progress and status to the frontend\n   - Update UI indicators when models are loaded/unloaded\n\n6. Error Handling:\n   - Implement try-except blocks for model loading operations\n   - Create custom exceptions for various failure scenarios (e.g., InvalidModelError, ModelLoadError)\n   - Display user-friendly error messages in the frontend\n\n7. Memory Management:\n   - Implement a mechanism to unload models from memory when switching\n   - Use Python's garbage collection to ensure proper cleanup\n   - Monitor and limit the number of simultaneously loaded models based on available system resources\n\n8. Configuration:\n   - Add new configuration options for model directory path and maximum loaded models\n   - Update the configuration file and parsing logic\n\n9. CLI Integration:\n   - Extend the CLI to support model loading and unloading operations\n   - Add a new subcommand for model management (e.g., `lawchat models list`, `lawchat models load &lt;model_name&gt;`)\n\n10. Documentation:\n    - Update API documentation to include new model management endpoints\n    - Add user guide sections for model loading and selection\n    - Include developer documentation on extending the model loading functionality",
+      "testStrategy": "1. Unit Tests:\n   - Write tests for model discovery function\n   - Test model loading/unloading functions with mock GGUF files\n   - Verify AIEngine class modifications\n\n2. Integration Tests:\n   - Test the interaction between backend API and SQLite storage\n   - Verify proper integration of model loading with the AI engine\n\n3. API Tests:\n   - Use pytest to test new API endpoints\n   - Verify correct responses for various scenarios (success, failure, invalid input)\n\n4. Frontend Tests:\n   - Use Jest and React Testing Library to test new UI components\n   - Verify correct rendering of model list and status indicators\n\n5. End-to-End Tests:\n   - Create Selenium or Cypress tests to simulate user interactions\n   - Test the complete flow of discovering, loading, and using a model\n\n6. Performance Tests:\n   - Measure memory usage during model loading and switching\n   - Test with multiple large models to ensure efficient resource management\n\n7. Error Handling Tests:\n   - Simulate various error conditions (e.g., corrupt model file, insufficient memory)\n   - Verify appropriate error messages are displayed\n\n8. CLI Tests:\n   - Test new CLI commands for model management\n   - Verify correct output and error handling\n\n9. Documentation Review:\n   - Ensure all new functionality is properly documented\n   - Verify accuracy of API documentation and user guide\n\n10. Manual Testing:\n    - Perform manual tests with real GGUF models\n    - Verify smooth user experience in the frontend\n    - Test edge cases and potential user mistakes",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement Backend Model Loading API",
+          "description": "Create new endpoints in the FastAPI server for model management and implement functions to load and unload models.",
+          "dependencies": [],
+          "details": "Create endpoints: `/api/models/load`, `/api/models/unload`, `/api/models/list`. Implement functions using `llama_cpp` library to handle GGUF model loading. Ensure proper error handling and status updates.\n<info added on 2025-05-27T22:40:41.029Z>\n✅ COMPLETED: Backend Model Loading API Implementation\n\n**What was accomplished:**\n\n1. **Created comprehensive ModelManager class** (`lawfirm_rag/core/model_manager.py`):\n   - **Thread-safe model management** with proper locking mechanisms\n   - **Memory management**: Automatic unloading of oldest models when memory limits reached\n   - **Model discovery**: Integration with ModelDownloader to find downloaded models\n   - **Multiple model support**: Can load/unload/switch between multiple models\n   - **Status tracking**: Comprehensive status reporting and memory usage estimation\n\n2. **Added new Pydantic models** for API responses:\n   - `ModelLoadRequest`: For model loading requests with force_reload option\n   - `ModelLoadResponse`: Standardized responses for load operations\n   - `LoadedModelInfo`: Detailed information about loaded models\n   - `LoadedModelsResponse`: Complete status of all loaded models\n\n3. **Implemented comprehensive API endpoints**:\n   - `GET /models/loaded`: Get information about currently loaded models\n   - `POST /models/load`: Load a downloaded model into memory\n   - `POST /models/unload`: Unload a model from memory\n   - `POST /models/switch`: Switch active model without unloading others\n\n4. **Enhanced existing endpoints**:\n   - Updated `/health` endpoint to include model manager status\n   - Updated `/models` endpoint to use new ModelManager instead of old implementation\n\n5. **Global AI component integration**:\n   - Model loading automatically updates global `ai_engine` and `query_generator`\n   - Proper fallback handling when no models are loaded\n   - Seamless integration with existing analysis and query endpoints\n\n**Key Features:**\n- **Memory-aware loading**: Prevents system overload by limiting concurrent models\n- **Automatic cleanup**: Unloads oldest models when memory limits are reached\n- **Thread safety**: All operations are thread-safe for concurrent requests\n- **Error handling**: Comprehensive error handling with proper HTTP status codes\n- **Status reporting**: Real-time status of loaded models, memory usage, and active model\n</info added on 2025-05-27T22:40:41.029Z>",
+          "status": "done",
+          "testStrategy": "Write unit tests for each API endpoint, including success and error scenarios. Test with mock GGUF models."
+        },
+        {
+          "id": 2,
+          "title": "Develop Model Discovery System",
+          "description": "Create a function to scan the downloaded models directory and store model metadata in the SQLite database.",
+          "dependencies": [],
+          "details": "Implement a function to detect available GGUF models in the specified directory. Store model name, path, and size in the SQLite database. Ensure periodic rescanning to detect new or removed models.",
+          "status": "completed",
+          "testStrategy": "Create test cases with sample GGUF files and verify correct detection and database storage."
+        },
+        {
+          "id": 3,
+          "title": "Extend Frontend for Model Selection",
+          "description": "Modify the existing Model Management modal to include model selection functionality and integrate with backend API.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Add a dropdown or list to display available models. Implement load/unload buttons. Use AJAX calls to interact with the backend API. Update UI indicators for model status.\n<info added on 2025-05-27T22:42:42.356Z>\n**Enhanced Model Management Modal Implementation**\n\n- Created comprehensive UI for model management with sections for loaded and available models\n- Implemented dynamic button states that transition between Download and Load based on model status\n- Added visual indicators for active models using green gradient styling and badges\n- Integrated memory usage display and load time tracking for each model\n\n**JavaScript Functionality**\n- Developed core model management methods: loadModel(), unloadModel(), switchToModel()\n- Created UI update functions: updateLoadedModelsDisplay(), updateDownloadedModelsDisplay()\n- Implemented dynamic UI generation with createLoadedModelsSection() and displayLoadedModels()\n- Added real-time status updates and synchronization with backend state\n\n**User Experience Improvements**\n- Implemented toast notifications for all model operations\n- Added comprehensive error handling for failed operations\n- Created hover effects and visual feedback for interactive elements\n- Ensured seamless integration with existing download functionality\n\n**CSS Enhancements**\n- Styled loaded models section with proper spacing and borders\n- Created distinctive styling for active models\n- Implemented consistent button styling across all model actions\n- Added responsive design elements for better usability\n</info added on 2025-05-27T22:42:42.356Z>",
+          "status": "done",
+          "testStrategy": "Perform end-to-end testing of the frontend, including UI interactions and API integration."
+        },
+        {
+          "id": 4,
+          "title": "Integrate Dynamic Model Loading with AI Engine",
+          "description": "Modify the AIEngine class to support dynamic model loading and switching between loaded models.",
+          "dependencies": [
+            1
+          ],
+          "details": "Add methods to switch between loaded models. Ensure proper initialization and cleanup of models. Implement memory management to unload models when switching.",
+          "status": "completed",
+          "testStrategy": "Write unit tests for AIEngine class methods, focusing on model switching and memory management."
+        },
+        {
+          "id": 5,
+          "title": "Implement Real-time Status Updates",
+          "description": "Create a WebSocket connection for sending real-time model loading progress and status updates to the frontend.",
+          "dependencies": [
+            1,
+            3,
+            4
+          ],
+          "details": "Implement WebSocket connection in both backend and frontend. Send model loading progress and status updates. Update UI indicators when models are loaded/unloaded.",
+          "status": "completed",
+          "testStrategy": "Test WebSocket connection stability and accuracy of status updates under various network conditions."
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "title": "Fix File Upload Lambda Bug in FastAPI Endpoint",
+      "description": "Replace the lambda function with a proper FileObj class in the FastAPI endpoint to correctly handle file processing and uploads.",
+      "details": "The current implementation uses a lambda function for file processing in the FastAPI endpoint, which is causing bugs in file upload functionality. This task involves:\n\n1. Identify the problematic endpoint in the FastAPI server (likely in `api/routes.py`)\n2. Replace the lambda function with a proper FileObj class that:\n   - Properly handles file metadata (name, size, type)\n   - Manages file I/O operations safely\n   - Implements proper error handling for file operations\n   - Ensures proper cleanup of temporary files\n   - Handles different file types consistently\n\n3. Update the endpoint to use the new FileObj class:\n```python\n# Current problematic implementation (example)\n@router.post(\"/upload\")\nasync def upload_file(file: UploadFile = File(...)):\n    processor = lambda f: process_document(f.filename, f.file)\n    result = await processor(file)\n    return {\"status\": \"success\", \"result\": result}\n\n# New implementation with FileObj class\nclass FileObj:\n    def __init__(self, file: UploadFile):\n        self.file = file\n        self.filename = file.filename\n        self.content_type = file.content_type\n        \n    async def process(self):\n        # Proper file handling logic\n        try:\n            # File processing code\n            return processed_result\n        except Exception as e:\n            logger.error(f\"Error processing file {self.filename}: {str(e)}\")\n            raise HTTPException(status_code=500, detail=f\"File processing error: {str(e)}\")\n        finally:\n            # Cleanup code\n\n@router.post(\"/upload\")\nasync def upload_file(file: UploadFile = File(...)):\n    file_obj = FileObj(file)\n    result = await file_obj.process()\n    return {\"status\": \"success\", \"result\": result}\n```\n\n4. Ensure the new implementation integrates correctly with the document processing module\n5. Update any related error handling to use the proper FastAPI error handling patterns\n6. Add appropriate logging for file upload operations and errors",
+      "testStrategy": "1. Unit tests:\n   - Create unit tests for the new FileObj class to verify it handles various file types correctly\n   - Test error conditions (invalid files, corrupted files, etc.)\n   - Test with mock file objects to ensure proper method calls\n\n2. Integration tests:\n   - Test the endpoint with actual file uploads of different types (PDF, DOCX, TXT)\n   - Verify the endpoint correctly processes files and returns appropriate responses\n   - Test with large files to ensure proper handling of memory and resources\n   - Test concurrent uploads to verify thread safety\n\n3. Manual testing:\n   - Use the Swagger UI to upload files through the API endpoint\n   - Verify the frontend can successfully upload files through this endpoint\n   - Check logs to ensure proper error reporting\n   - Verify temporary files are properly cleaned up after processing\n\n4. Regression testing:\n   - Ensure all existing functionality that depends on file uploads still works correctly\n   - Verify that the document processing pipeline functions correctly with the new implementation",
+      "status": "done",
+      "dependencies": [
+        7,
+        16
+      ],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 30,
+      "title": "Fix AI Model Output Formatting and Query Generation",
+      "description": "Improve AI model output formatting by removing [/INST] tags, enhance Westlaw query syntax prompts, and fix confidence scoring in responses.",
+      "details": "This task involves several improvements to the AI model output and query generation:\n\n1. Remove [/INST] tags from AI responses:\n   - Identify where these instruction tags are leaking into the final output\n   - Implement a post-processing filter in the AIEngine class to strip these tags\n   - Ensure the filter handles various formats of instruction tags ([/INST], [INST], etc.)\n\n2. Improve Westlaw query syntax prompts:\n   - Review current prompt templates for Westlaw query generation\n   - Enhance prompts to better guide the model in generating syntactically correct Westlaw queries\n   - Add examples of well-formed Westlaw queries in the prompt templates\n   - Implement syntax validation for generated queries\n   - Create a specialized prompt template specifically for legal research queries\n\n3. Fix confidence scoring:\n   - Review the current implementation of confidence scoring\n   - Identify issues in the calculation or presentation of confidence scores\n   - Implement a more reliable algorithm for determining confidence scores\n   - Normalize confidence scores to a consistent scale (e.g., 0-100%)\n   - Add metadata to responses that explains the basis for confidence scores\n\n4. Implementation steps:\n   - Update the AIEngine class in the core module to handle these improvements\n   - Modify the prompt templates in the templates directory\n   - Update the response processing pipeline to clean outputs\n   - Add unit tests for each improvement\n   - Document the changes in code comments and update API documentation\n\n5. Integration considerations:\n   - Ensure changes are backward compatible with existing API calls\n   - Update any frontend components that display confidence scores\n   - Consider adding a configuration option to toggle the new formatting features",
+      "testStrategy": "1. Test removal of instruction tags:\n   - Create unit tests with sample AI responses containing [/INST] tags\n   - Verify the post-processing correctly removes all variants of instruction tags\n   - Test with various edge cases (nested tags, malformed tags, etc.)\n\n2. Test Westlaw query generation:\n   - Create a test suite with legal research scenarios\n   - Compare generated queries before and after the improvements\n   - Verify syntax correctness of generated queries\n   - Test with a variety of legal topics and complexity levels\n   - Validate that generated queries work correctly when submitted to Westlaw\n\n3. Test confidence scoring:\n   - Create test cases with known expected confidence levels\n   - Verify scores are calculated correctly and consistently\n   - Test edge cases (very high/low confidence scenarios)\n   - Ensure confidence scores correlate with actual response quality\n\n4. Integration testing:\n   - Test the complete pipeline from user input to final formatted output\n   - Verify CLI output displays correctly with the improvements\n   - Test API endpoints return properly formatted responses\n   - Verify frontend components display the improved outputs correctly\n\n5. Performance testing:\n   - Measure any impact on response time from the additional processing\n   - Ensure the improvements don't significantly increase memory usage\n\n6. Manual verification:\n   - Conduct user testing to verify the improvements enhance usability\n   - Compare side-by-side outputs from before and after the changes",
+      "status": "done",
+      "dependencies": [
+        8,
+        15,
+        28
+      ],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 31,
+      "title": "Set up GitHub Repository for lawfirm-rag-package",
+      "description": "Create a remote GitHub repository for the LawFirm-RAG project, configure the local repository to connect to the remote origin, and push the initial codebase.",
+      "status": "done",
+      "dependencies": [
+        1,
+        3,
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Create a new repository on GitHub:\n   - Log in to GitHub and create a new repository named \"lawfirm-rag-package\"\n   - Keep the repository private initially (can be changed later)\n   - Do not initialize with README, .gitignore, or license (these already exist locally)\n\n2. Configure the local repository to connect to the remote:\n   - Navigate to the local project directory\n   - Run `git remote add origin https://github.com/username/lawfirm-rag-package.git`\n   - Verify the remote connection with `git remote -v`\n\n3. Push the codebase to GitHub:\n   - The local repository is already initialized with main branch, README.md, MIT License, and .gitignore\n   - Ensure all necessary files are staged: `git add .`\n   - Create an initial commit with a descriptive message: `git commit -m \"Initial commit: LawFirm-RAG package structure\"`\n   - Set the upstream branch: `git push -u origin main`\n   - Verify the push was successful by checking the GitHub repository\n\n4. Configure branch protection rules (optional):\n   - Set up branch protection for the main branch\n   - Require pull request reviews before merging\n   - Require status checks to pass before merging\n\n5. Set up GitHub Actions workflow (optional):\n   - Create a `.github/workflows` directory\n   - Add a basic CI workflow YAML file for testing\n\n6. Update documentation with repository information:\n   - Add the repository URL to the README.md if not already included\n   - Include basic clone instructions for contributors",
+      "testStrategy": "1. Verify the GitHub repository exists and is accessible:\n   - Navigate to the GitHub repository URL\n   - Confirm the repository name matches \"lawfirm-rag-package\"\n   - Verify repository visibility settings are as expected\n\n2. Confirm remote configuration:\n   - Run `git remote -v` in the local repository\n   - Verify that the origin points to the correct GitHub URL\n\n3. Validate the initial codebase push:\n   - Check that all files from the local repository appear in the GitHub repository\n   - Verify file structure matches the expected project layout\n   - Confirm that the comprehensive README.md, MIT License, and Python-specific .gitignore are present\n   - Confirm that .gitignore is working correctly (no unwanted files in repository)\n\n4. Test clone functionality:\n   - Clone the repository to a new location using `git clone https://github.com/username/lawfirm-rag-package.git`\n   - Verify all files are correctly cloned\n\n5. Verify branch configuration:\n   - Confirm the default branch is set correctly (main)\n   - Check that any branch protection rules are functioning as expected\n\n6. Document verification:\n   - Ensure README.md contains the correct repository URL\n   - Verify installation instructions work when following them from the GitHub repository",
+      "subtasks": [
+        {
+          "id": 31.1,
+          "title": "Local repository preparation",
+          "description": "Git repository has been initialized with main branch, comprehensive README.md created, MIT License added, and .gitignore configured for Python project.",
+          "status": "done"
+        },
+        {
+          "id": 31.2,
+          "title": "Create GitHub repository",
+          "description": "Create the 'lawfirm-rag-package' repository on GitHub without initializing README, license or gitignore since these already exist locally.",
+          "status": "done"
+        },
+        {
+          "id": 31.3,
+          "title": "Connect and push to remote repository",
+          "description": "Connect the local repository to GitHub remote and push the initial codebase.",
+          "status": "done"
+        },
+        {
+          "id": 31.4,
+          "title": "Configure repository settings",
+          "description": "Set up branch protection rules and other repository settings as needed.",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "title": "Set up GitHub Packages for Private Distribution",
+      "description": "Configure GitHub Actions workflow to publish the lawfirm-rag-package to PyPI instead of GitHub Packages, and update package configuration for public distribution.",
+      "status": "done",
+      "dependencies": [
+        31,
+        25,
+        3
+      ],
+      "priority": "high",
+      "details": "1. Configure package for PyPI distribution:\n   - Update the `pyproject.toml` file to include PyPI repository information and update package name to match PyPI naming convention:\n     ```toml\n     [build-system]\n     requires = [\"setuptools>=42\", \"wheel\"]\n     build-backend = \"setuptools.build_meta\"\n\n     # Update package name to 'lawfirm-rag-package' to match PyPI naming convention\n     ```\n\n2. Create or modify the GitHub Actions workflow file (`.github/workflows/publish-to-pypi.yml`):\n   ```yaml\n   name: Publish Python Package to PyPI\n\n   on:\n     release:\n       types: [created]\n     # Optional: Add manual trigger\n     workflow_dispatch:\n\n   jobs:\n     deploy:\n       runs-on: ubuntu-latest\n       environment: release\n       permissions:\n         id-token: write  # Required for PyPI trusted publishing\n         contents: read\n       steps:\n       - uses: actions/checkout@v3\n       - name: Set up Python\n         uses: actions/setup-python@v4\n         with:\n           python-version: '3.10'\n       - name: Install dependencies\n         run: |\n           python -m pip install --upgrade pip\n           pip install build\n       - name: Build package\n         run: python -m build\n       - name: Publish package to PyPI\n         uses: pypa/gh-action-pypi-publish@release/v1\n   ```\n\n3. Set up PyPI account and token:\n   - Create a PyPI account if you don't have one\n   - Generate a PyPI API token with upload scope specifically for \"Upload to project: lawfirm-rag-package\"\n   - Add the token to GitHub repository secrets as PYPI_API_TOKEN\n\n4. Create documentation for users on how to install the package:\n   ```markdown\n   ## Installing from PyPI\n\n   To install this package from PyPI, simply run:\n\n   ```\n   pip install lawfirm-rag-package\n   ```\n   ```\n\n5. Update the README.md with installation instructions for public package distribution:\n   - Include documentation for installing from PyPI\n   - Remove any references to GitHub Packages or private distribution\n\n6. Test the workflow by creating a GitHub release or using the manual workflow trigger.\n\nNote: This approach is preferable as:\n- PyPI is the standard Python package registry\n- Public packages on PyPI are freely available without authentication\n- PyPI has better integration with pip and Python tooling\n- PyPI packages are easier to install for end users\n- The workflow uses PyPI's trusted publishing mechanism, which is more secure than using API tokens directly in the workflow",
+      "testStrategy": "1. Verify PyPI configuration:\n   - Check that the `pyproject.toml` file has been correctly updated with PyPI repository information and the package name has been changed to 'lawfirm-rag-package'\n   - Ensure the GitHub Actions workflow file is properly configured to publish to PyPI with appropriate permissions and environment settings\n\n2. Test the GitHub Actions workflow:\n   - Create a test release tag or use the manual workflow trigger\n   - Monitor the GitHub Actions workflow execution\n   - Verify that the package is successfully built and published to PyPI\n\n3. Test package installation:\n   - Create a new virtual environment\n   - Attempt to install the package using pip directly from PyPI\n   - Verify that the package installs correctly and can be imported\n   - Ensure the package can be installed using the name 'lawfirm-rag-package'\n\n4. Test access controls (if needed):\n   - If the package should be public, verify that anyone can access and install it\n   - If the package should be private, verify that only authorized users can access it\n\n5. Integration testing:\n   - Create a simple test project that depends on the package\n   - Verify that the package can be installed and used in a real project scenario\n   - Test any specific functionality that might be affected by the distribution method\n\n6. Documentation verification:\n   - Review the updated README and documentation\n   - Ensure the installation instructions are clear and accurate\n   - Have a team member follow the instructions to verify they work as expected\n   - Confirm the documentation reflects the new package name and PyPI installation method",
+      "subtasks": [
+        {
+          "id": "32.1",
+          "title": "Test GitHub release workflow",
+          "description": "Create a GitHub release to test the publishing workflow and verify the package is correctly published to GitHub Packages.",
+          "status": "done"
+        },
+        {
+          "id": "32.2",
+          "title": "Verify package publication",
+          "description": "Check that the package appears in the GitHub Packages section of the repository after the workflow runs.",
+          "status": "done"
+        },
+        {
+          "id": "32.3",
+          "title": "Test installation from GitHub Packages",
+          "description": "Create a test environment and verify that the package can be installed using the instructions in the README.",
+          "status": "done"
+        },
+        {
+          "id": "32.4",
+          "title": "Coordinate with task #33 for installation instructions",
+          "description": "Review task #33 and provide more detailed installation instructions if needed based on testing results.",
+          "status": "done"
+        },
+        {
+          "id": "32.5",
+          "title": "Create PyPI account and generate API token",
+          "description": "Create a PyPI account if needed and generate a PyPI API token with upload scope for the package.",
+          "status": "done"
+        },
+        {
+          "id": "32.6",
+          "title": "Add PyPI token to GitHub repository secrets",
+          "description": "Add the PyPI API token to GitHub repository secrets as PYPI_API_TOKEN for use in the workflow.",
+          "status": "done"
+        },
+        {
+          "id": "32.7",
+          "title": "Update subtasks 32.1-32.3 for PyPI instead of GitHub Packages",
+          "description": "The original subtasks refer to GitHub Packages, but we're now using PyPI. When executing these tasks, verify publication to PyPI and test installation from PyPI instead.",
+          "status": "done"
+        },
+        {
+          "id": 33.7,
+          "title": "Test GitHub release workflow for PyPI",
+          "description": "Create a GitHub release to test the publishing workflow and verify the package is correctly published to PyPI.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": 34.7,
+          "title": "Verify package publication on PyPI",
+          "description": "Check that the package appears in the PyPI registry after the workflow runs successfully.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": 35.7,
+          "title": "Test installation from PyPI",
+          "description": "Create a test environment and verify that the package can be installed from PyPI using the instructions in the README.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": 36.7,
+          "title": "Update package name in pyproject.toml",
+          "description": "Update the package name in pyproject.toml from 'dannymexe-rag-package' to 'lawfirm-rag-package' for PyPI publishing.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": 37.7,
+          "title": "Create GitHub Actions workflow for PyPI publishing",
+          "description": "Create a GitHub Actions workflow file for publishing to PyPI using trusted publishing mechanism.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": 38.7,
+          "title": "Update README with PyPI installation instructions",
+          "description": "Update the README.md file with instructions for installing the package from PyPI.",
+          "details": "",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": "32.8",
+          "title": "Generate PyPI token with specific project scope",
+          "description": "Generate a PyPI API token with the specific scope \"Upload to project: lawfirm-rag-package\" as required for the trusted publishing workflow.",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": "32.9",
+          "title": "Create GitHub release to trigger PyPI publication",
+          "description": "Create a GitHub release with an appropriate version tag to trigger the PyPI publishing workflow.",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        },
+        {
+          "id": "32.10",
+          "title": "Verify trusted publishing configuration",
+          "description": "Ensure the GitHub Actions workflow is correctly configured for PyPI's trusted publishing mechanism, which eliminates the need for API tokens to be passed directly in the workflow.",
+          "status": "done",
+          "dependencies": [],
+          "parentTaskId": 32
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "title": "Update README.md with Private Repository Installation Instructions",
+      "description": "Update the project's README.md with comprehensive installation instructions for the private GitHub repository, including collaborator access, token setup, and installing from GitHub Packages registry.",
+      "details": "1. Update the README.md with the following sections:\n\n### Installation from Private GitHub Repository\n\n#### For Collaborators\n1. Add a section explaining how to request access to the repository:\n   ```markdown\n   ## Installation\n   \n   ### For Collaborators\n   \n   1. Request access to the repository by contacting the repository administrator\n   2. Once added as a collaborator, clone the repository:\n      ```bash\n      git clone https://github.com/organization/lawfirm-rag-package.git\n      cd lawfirm-rag-package\n      pip install -e .\n      ```\n   ```\n\n#### For Installing via GitHub Packages\n1. Add detailed instructions for creating a Personal Access Token (PAT):\n   ```markdown\n   ### Installing from GitHub Packages\n   \n   To install this package directly from GitHub Packages, you'll need to:\n   \n   1. Create a GitHub Personal Access Token (PAT):\n      - Go to GitHub → Settings → Developer settings → Personal access tokens\n      - Click \"Generate new token\"\n      - Select the `read:packages` scope\n      - Copy the generated token\n   \n   2. Configure pip to use GitHub Packages with authentication:\n      ```bash\n      # Create or edit ~/.pip/pip.conf (Linux/Mac) or %APPDATA%\\pip\\pip.ini (Windows)\n      [global]\n      index-url = https://username:TOKEN@maven.pkg.github.com/organization/lawfirm-rag-package/\n      ```\n      \n   3. Install the package:\n      ```bash\n      pip install lawfirm-rag-package\n      ```\n   ```\n\n#### For CI/CD Environments\n1. Add instructions for using GitHub Actions secrets:\n   ```markdown\n   ### For CI/CD Environments\n   \n   When installing in CI/CD pipelines:\n   \n   ```yaml\n   # Example GitHub Actions workflow step\n   - name: Install from GitHub Packages\n     run: |\n       pip install lawfirm-rag-package\n     env:\n       PIP_EXTRA_INDEX_URL: https://$${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/organization/lawfirm-rag-package/\n   ```\n   ```\n\n2. Include troubleshooting section:\n   ```markdown\n   ### Troubleshooting\n   \n   - **Authentication Errors**: Ensure your token has the correct permissions\n   - **Package Not Found**: Verify you're using the correct repository URL\n   - **Version Issues**: Specify exact versions with `pip install lawfirm-rag-package==x.y.z`\n   ```\n\n3. Update any existing installation instructions to reflect the private nature of the package.\n\n4. Ensure the README includes a brief explanation of why the package is private and the benefits of using GitHub Packages for distribution.\n\n5. Add a section about versioning and releases that explains how to find and install specific versions from the GitHub Packages registry.",
+      "testStrategy": "1. Verify README.md content:\n   - Ensure all sections (collaborator access, token setup, GitHub Packages installation) are present and accurate\n   - Check that code examples are properly formatted and syntactically correct\n   - Verify URLs and paths are correct for the organization's repository structure\n\n2. Test the installation instructions:\n   - Create a test GitHub account with no prior access to the repository\n   - Follow the README instructions to request access, create a token, and install the package\n   - Document any points of confusion or steps that need clarification\n\n3. Validate GitHub Packages installation:\n   - Create a fresh virtual environment\n   - Configure pip according to the instructions\n   - Attempt to install the package using the provided commands\n   - Verify the package installs correctly and can be imported\n\n4. Test CI/CD instructions:\n   - Create a simple test workflow in a separate repository\n   - Configure the workflow according to the README instructions\n   - Verify the package installs correctly in the CI environment\n\n5. Peer review:\n   - Have a team member unfamiliar with the project follow the instructions\n   - Collect feedback on clarity and completeness\n   - Make adjustments based on feedback\n\n6. Accessibility check:\n   - Ensure the README follows accessibility best practices\n   - Check that code blocks are properly formatted for screen readers\n   - Verify color contrast for any custom formatting",
+      "status": "pending",
+      "dependencies": [
+        32
+      ],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 34,
+      "title": "Implement Ollama Client Interface",
+      "description": "Create a client interface to communicate with the Ollama API, supporting all current LLM operations.",
+      "details": "1. Research the latest Ollama API documentation (https://github.com/ollama/ollama/blob/main/docs/api.md).\n2. Implement an OllamaClient class using the `requests` library for HTTP communication.\n3. Define methods for text generation, embeddings, and other LLM operations.\n4. Implement proper error handling and retries for API communication.\n5. Use environment variables or a config file for Ollama connection parameters (e.g., host, port).\n6. Implement model management functions (list, load, unload).\n\nExample client structure:\n```python\nimport requests\n\nclass OllamaClient:\n    def __init__(self, base_url='http://localhost:11434'):\n        self.base_url = base_url\n\n    def generate(self, prompt, model='llama2', **params):\n        response = requests.post(f'{self.base_url}/api/generate', json={'prompt': prompt, 'model': model, **params})\n        response.raise_for_status()\n        return response.json()\n\n    def embeddings(self, text, model='llama2'):\n        response = requests.post(f'{self.base_url}/api/embeddings', json={'prompt': text, 'model': model})\n        response.raise_for_status()\n        return response.json()['embedding']\n\n    # Implement other methods: list_models, load_model, etc.\n```",
+      "testStrategy": "1. Write unit tests for each method of the OllamaClient class.\n2. Mock API responses to test different scenarios (success, errors, timeouts).\n3. Test with actual Ollama instance for integration testing.\n4. Verify error handling and retry logic.\n5. Test with different models and parameter combinations.",
+      "priority": "high",
+      "dependencies": [],
+      "status": "pending",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Research and Document Ollama API",
+          "description": "Thoroughly review the latest Ollama API documentation and create a summary of key endpoints and functionalities.",
+          "dependencies": [],
+          "details": "Access the Ollama API documentation at https://github.com/ollama/ollama/blob/main/docs/api.md. Document all available endpoints, request/response formats, and any rate limiting or authentication requirements.",
+          "status": "pending",
+          "testStrategy": "Create a comprehensive checklist of API features to ensure all aspects are covered in the implementation."
+        },
+        {
+          "id": 2,
+          "title": "Set Up Project Structure",
+          "description": "Create the basic project structure and set up the development environment for the Ollama client interface.",
+          "dependencies": [
+            1
+          ],
+          "details": "Initialize a new Python project, set up virtual environment, install required dependencies (requests library), and create the main OllamaClient class file.",
+          "status": "pending",
+          "testStrategy": "Verify that the project structure is correct and all necessary files are present."
+        },
+        {
+          "id": 3,
+          "title": "Implement Core OllamaClient Class",
+          "description": "Create the OllamaClient class with initialization and basic HTTP request handling.",
+          "dependencies": [
+            2
+          ],
+          "details": "Implement the __init__ method with base_url parameter, create methods for GET and POST requests using the requests library, and implement proper error handling and retries.",
+          "status": "pending",
+          "testStrategy": "Write unit tests for initialization and basic HTTP methods using mock responses."
+        },
+        {
+          "id": 4,
+          "title": "Implement Text Generation Method",
+          "description": "Create the generate method in the OllamaClient class for text generation requests.",
+          "dependencies": [
+            3
+          ],
+          "details": "Implement the generate method with parameters for prompt, model, and additional options. Handle the API response and return the generated text.",
+          "status": "pending",
+          "testStrategy": "Create unit tests with mock API responses to verify correct handling of successful and error responses."
+        },
+        {
+          "id": 5,
+          "title": "Implement Embeddings Method",
+          "description": "Add the embeddings method to the OllamaClient class for generating text embeddings.",
+          "dependencies": [
+            3
+          ],
+          "details": "Create the embeddings method with parameters for input text and model. Process the API response to extract and return the embedding vector.",
+          "status": "pending",
+          "testStrategy": "Write unit tests to ensure correct parsing of embedding responses and error handling."
+        },
+        {
+          "id": 6,
+          "title": "Implement Model Management Methods",
+          "description": "Add methods for listing, loading, and unloading models in the OllamaClient class.",
+          "dependencies": [
+            3
+          ],
+          "details": "Create list_models, load_model, and unload_model methods. Implement proper error handling and response processing for each operation.",
+          "status": "pending",
+          "testStrategy": "Develop unit tests for each model management method, including scenarios for successful operations and potential errors."
+        },
+        {
+          "id": 7,
+          "title": "Implement Configuration Management",
+          "description": "Create a system for managing Ollama connection parameters using environment variables or a config file.",
+          "dependencies": [
+            3
+          ],
+          "details": "Implement a configuration class or module that reads Ollama connection parameters (host, port) from environment variables or a config file. Update the OllamaClient to use these configurations.",
+          "status": "pending",
+          "testStrategy": "Write tests to verify that the client correctly uses configuration values from different sources (default, environment variables, config file)."
+        },
+        {
+          "id": 8,
+          "title": "Create Comprehensive Documentation",
+          "description": "Write detailed documentation for the OllamaClient class and its usage.",
+          "dependencies": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "details": "Create a README.md file with installation instructions, usage examples for all implemented methods, and explanations of configuration options. Include docstrings for all classes and methods in the code.",
+          "status": "pending",
+          "testStrategy": "Review documentation for completeness and clarity. Consider using a documentation testing tool to ensure all public methods are documented."
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "title": "Create LLM Abstraction Layer",
+      "description": "Develop an abstraction layer for LLM operations that can work with different backends, including Ollama and llama-cpp-python.",
+      "details": "1. Define an abstract base class `LLMBackend` with methods for common operations.\n2. Implement concrete classes `OllamaBackend` and `LlamaCppBackend`.\n3. Use the Strategy pattern to allow runtime switching between backends.\n4. Implement a factory method to create the appropriate backend based on configuration.\n\nExample implementation:\n```python\nfrom abc import ABC, abstractmethod\n\nclass LLMBackend(ABC):\n    @abstractmethod\n    def generate(self, prompt, **params):\n        pass\n\n    @abstractmethod\n    def embeddings(self, text):\n        pass\n\nclass OllamaBackend(LLMBackend):\n    def __init__(self, client):\n        self.client = client\n\n    def generate(self, prompt, **params):\n        return self.client.generate(prompt, **params)\n\n    def embeddings(self, text):\n        return self.client.embeddings(text)\n\nclass LlamaCppBackend(LLMBackend):\n    # Implement methods using llama-cpp-python\n\nclass LLMFactory:\n    @staticmethod\n    def create_backend(backend_type, **kwargs):\n        if backend_type == 'ollama':\n            return OllamaBackend(OllamaClient(**kwargs))\n        elif backend_type == 'llama-cpp':\n            return LlamaCppBackend(**kwargs)\n        else:\n            raise ValueError(f'Unknown backend type: {backend_type}')\n```",
+      "testStrategy": "1. Write unit tests for the abstract base class and concrete implementations.\n2. Test the factory method with different configurations.\n3. Create mock backends to verify the abstraction works correctly.\n4. Test switching between backends at runtime.\n5. Verify that all existing functionality works with both backends.",
+      "priority": "high",
+      "dependencies": [
+        34
+      ],
+      "status": "pending",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Define LLMBackend abstract base class",
+          "description": "Create an abstract base class with common LLM operations",
+          "dependencies": [],
+          "details": "Define abstract methods for generate() and embeddings()",
+          "status": "pending",
+          "testStrategy": "Verify that LLMBackend cannot be instantiated directly"
+        },
+        {
+          "id": 2,
+          "title": "Implement OllamaBackend class",
+          "description": "Create a concrete class for Ollama operations",
+          "dependencies": [
+            1
+          ],
+          "details": "Implement generate() and embeddings() methods using Ollama client",
+          "status": "pending",
+          "testStrategy": "Test OllamaBackend with mock Ollama client"
+        },
+        {
+          "id": 3,
+          "title": "Implement LlamaCppBackend class",
+          "description": "Create a concrete class for llama-cpp-python operations",
+          "dependencies": [
+            1
+          ],
+          "details": "Implement generate() and embeddings() methods using llama-cpp-python",
+          "status": "pending",
+          "testStrategy": "Test LlamaCppBackend with mock llama-cpp-python client"
+        },
+        {
+          "id": 4,
+          "title": "Develop LLMFactory class",
+          "description": "Create a factory class to instantiate appropriate backends",
+          "dependencies": [
+            2,
+            3
+          ],
+          "details": "Implement create_backend() method to return OllamaBackend or LlamaCppBackend based on input",
+          "status": "pending",
+          "testStrategy": "Test factory method with different backend types"
+        },
+        {
+          "id": 5,
+          "title": "Implement runtime backend switching",
+          "description": "Use Strategy pattern to allow switching between backends at runtime",
+          "dependencies": [
+            4
+          ],
+          "details": "Create a context class that uses LLMBackend and can switch between implementations",
+          "status": "pending",
+          "testStrategy": "Test switching between backends during execution"
+        },
+        {
+          "id": 6,
+          "title": "Add error handling and logging",
+          "description": "Implement robust error handling and logging throughout the abstraction layer",
+          "dependencies": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "details": "Add try-except blocks, custom exceptions, and logging statements",
+          "status": "pending",
+          "testStrategy": "Test error scenarios and verify log outputs"
+        },
+        {
+          "id": 7,
+          "title": "Implement configuration management",
+          "description": "Create a configuration system for managing backend settings",
+          "dependencies": [
+            4
+          ],
+          "details": "Develop a config parser to read from file or environment variables",
+          "status": "pending",
+          "testStrategy": "Test configuration loading with various settings"
+        },
+        {
+          "id": 8,
+          "title": "Write comprehensive documentation",
+          "description": "Create detailed documentation for the abstraction layer",
+          "dependencies": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "details": "Write API documentation, usage examples, and architecture overview",
+          "status": "pending",
+          "testStrategy": "Review documentation for completeness and clarity"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "title": "Refactor Existing Code to Use New Abstraction Layer",
+      "description": "Update the current codebase to use the new LLM abstraction layer, ensuring compatibility with both Ollama and llama-cpp-python backends.",
+      "details": "1. Identify all places in the codebase where llama-cpp-python is directly used.\n2. Replace direct calls with calls to the abstraction layer.\n3. Update configuration handling to support backend selection.\n4. Implement a migration path for existing users' configurations.\n5. Update any model loading or management code to work with both backends.\n\nExample refactoring:\n```python\n# Before\nfrom llama_cpp import Llama\n\nmodel = Llama(model_path='path/to/model.gguf')\noutput = model(prompt, max_tokens=100)\n\n# After\nfrom lawfirm_rag.llm import LLMFactory\n\nconfig = load_config()  # Load from YAML/TOML\nbackend = LLMFactory.create_backend(config['llm_backend'], **config['llm_settings'])\noutput = backend.generate(prompt, max_tokens=100)\n```",
+      "testStrategy": "1. Create a comprehensive test suite covering all refactored code.\n2. Test with both Ollama and llama-cpp-python backends to ensure feature parity.\n3. Verify that existing test cases pass with the new abstraction layer.\n4. Test migration of existing configurations to the new format.\n5. Perform integration tests with the entire RAG pipeline using both backends.",
+      "priority": "high",
+      "dependencies": [
+        35
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 37,
+      "title": "Update CLI Interface for Ollama Integration",
+      "description": "Modify the command-line interface to support Ollama backend configuration and provide a seamless experience for users.",
+      "details": "1. Update CLI argument parsing to include Ollama-specific options.\n2. Implement a command to switch between backends (e.g., `lawfirm-rag config set-backend ollama`).\n3. Add a command to check Ollama connection status.\n4. Update help messages and documentation for new Ollama-related commands.\n5. Ensure backward compatibility for existing CLI commands.\n\nExample CLI updates:\n```python\nimport click\nfrom lawfirm_rag.config import Config\nfrom lawfirm_rag.llm import LLMFactory\n\n@click.group()\ndef cli():\n    pass\n\n@cli.command()\n@click.option('--backend', type=click.Choice(['ollama', 'llama-cpp']), default='ollama')\n@click.option('--ollama-host', default='http://localhost:11434')\ndef set_backend(backend, ollama_host):\n    config = Config.load()\n    config.set('llm_backend', backend)\n    if backend == 'ollama':\n        config.set('llm_settings.ollama_host', ollama_host)\n    config.save()\n    click.echo(f'Backend set to {backend}')\n\n@cli.command()\ndef check_ollama():\n    backend = LLMFactory.create_backend('ollama')\n    try:\n        backend.client.list_models()\n        click.echo('Ollama connection successful')\n    except Exception as e:\n        click.echo(f'Ollama connection failed: {str(e)}')\n\nif __name__ == '__main__':\n    cli()\n```",
+      "testStrategy": "1. Write unit tests for new CLI commands and options.\n2. Test CLI with various combinations of arguments and configurations.\n3. Verify that help messages are correct and informative.\n4. Test backward compatibility with existing command usage.\n5. Perform user acceptance testing with sample workflows.",
+      "priority": "medium",
+      "dependencies": [
+        36
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 38,
+      "title": "Implement Ollama Model Management",
+      "description": "Create functionality to manage Ollama models, including listing available models, downloading new models, and handling model-specific configurations.",
+      "details": "1. Extend the OllamaClient to include model management methods.\n2. Implement commands to list, download, and remove Ollama models.\n3. Create a model configuration system to map model names to Ollama models.\n4. Update the RAG system to use the new model management functionality.\n5. Implement caching for model information to reduce API calls.\n\nExample implementation:\n```python\nclass OllamaClient:\n    # ... existing methods ...\n\n    def list_models(self):\n        response = requests.get(f'{self.base_url}/api/tags')\n        response.raise_for_status()\n        return response.json()['models']\n\n    def download_model(self, model_name):\n        response = requests.post(f'{self.base_url}/api/pull', json={'name': model_name})\n        response.raise_for_status()\n        return response.json()\n\nclass ModelManager:\n    def __init__(self, client):\n        self.client = client\n        self.config = Config.load()\n\n    def get_model_config(self, model_name):\n        model_configs = self.config.get('model_configs', {})\n        return model_configs.get(model_name, {'ollama_model': model_name})\n\n    def set_model_config(self, model_name, ollama_model, **params):\n        model_configs = self.config.get('model_configs', {})\n        model_configs[model_name] = {'ollama_model': ollama_model, **params}\n        self.config.set('model_configs', model_configs)\n        self.config.save()\n\n@cli.command()\ndef list_models():\n    client = OllamaClient()\n    models = client.list_models()\n    click.echo('Available models:')\n    for model in models:\n        click.echo(f'- {model}')\n\n@cli.command()\n@click.argument('model_name')\ndef download_model(model_name):\n    client = OllamaClient()\n    result = client.download_model(model_name)\n    click.echo(f'Model {model_name} downloaded successfully')\n```",
+      "testStrategy": "1. Test model listing functionality with mock API responses.\n2. Verify model download process and error handling.\n3. Test model configuration management, including saving and loading.\n4. Perform integration tests with actual Ollama instance.\n5. Test CLI commands for model management.\n6. Verify that the RAG system correctly uses configured models.",
+      "priority": "medium",
+      "dependencies": [
+        34
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 39,
+      "title": "Update Web Interface for Ollama Integration",
+      "description": "Modify the web interface to support Ollama backend configuration and provide model management features.",
+      "details": "1. Update the FastAPI backend to use the new LLM abstraction layer.\n2. Add API endpoints for Ollama-specific operations (e.g., listing models, checking connection).\n3. Modify the frontend to include Ollama configuration options.\n4. Implement a model selection interface in the web UI.\n5. Add error handling and user feedback for Ollama-related operations.\n\nExample FastAPI updates:\n```python\nfrom fastapi import FastAPI, HTTPException\nfrom lawfirm_rag.llm import LLMFactory\nfrom lawfirm_rag.config import Config\n\napp = FastAPI()\n\n@app.get('/api/models')\nasync def list_models():\n    try:\n        backend = LLMFactory.create_backend('ollama')\n        models = backend.client.list_models()\n        return {'models': models}\n    except Exception as e:\n        raise HTTPException(status_code=500, detail=str(e))\n\n@app.post('/api/config/backend')\nasync def set_backend(backend: str):\n    config = Config.load()\n    config.set('llm_backend', backend)\n    config.save()\n    return {'message': f'Backend set to {backend}'}\n\n# Update existing endpoints to use the new abstraction layer\n@app.post('/api/analyze')\nasync def analyze_document(document: str):\n    config = Config.load()\n    backend = LLMFactory.create_backend(config.get('llm_backend'))\n    # Use backend for document analysis\n    # ...\n```\n\nFrontend updates (using React as an example):\n```jsx\nimport React, { useState, useEffect } from 'react';\nimport axios from 'axios';\n\nfunction ModelSelector() {\n  const [models, setModels] = useState([]);\n  const [selectedModel, setSelectedModel] = useState('');\n\n  useEffect(() => {\n    axios.get('/api/models').then(response => setModels(response.data.models));\n  }, []);\n\n  const handleModelChange = (event) => {\n    setSelectedModel(event.target.value);\n    // Update backend configuration\n    axios.post('/api/config/model', { model: event.target.value });\n  };\n\n  return (\n    <select value={selectedModel} onChange={handleModelChange}>\n      {models.map(model => (\n        <option key={model} value={model}>{model}</option>\n      ))}\n    </select>\n  );\n}\n```",
+      "testStrategy": "1. Write unit tests for new API endpoints.\n2. Test frontend components with mocked API responses.\n3. Perform end-to-end testing of the web interface with Ollama integration.\n4. Verify error handling and user feedback mechanisms.\n5. Test model selection and configuration persistence.\n6. Conduct cross-browser testing for the updated web interface.",
+      "priority": "medium",
+      "dependencies": [
+        37,
+        38
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 40,
+      "title": "Implement Caching and Performance Optimizations",
+      "description": "Develop a caching system for Ollama responses and implement performance optimizations to ensure the system remains efficient with the new backend.",
+      "details": "1. Implement a caching layer using Redis or a similar in-memory data store.\n2. Cache frequently used embeddings and generation results.\n3. Implement cache invalidation strategies based on model updates or time expiration.\n4. Optimize batch processing for document analysis using Ollama's capabilities.\n5. Implement parallel processing for multiple documents when possible.\n\nExample caching implementation:\n```python\nimport redis\nfrom functools import lru_cache\n\nclass CacheManager:\n    def __init__(self, redis_url='redis://localhost:6379'):\n        self.redis = redis.from_url(redis_url)\n\n    def get(self, key):\n        return self.redis.get(key)\n\n    def set(self, key, value, expire=3600):\n        self.redis.set(key, value, ex=expire)\n\n@lru_cache(maxsize=100)\ndef get_embedding(text, model):\n    cache_key = f'embedding:{model}:{hash(text)}'\n    cache_manager = CacheManager()\n    cached_result = cache_manager.get(cache_key)\n    if cached_result:\n        return cached_result\n    \n    backend = LLMFactory.create_backend('ollama')\n    embedding = backend.embeddings(text, model=model)\n    cache_manager.set(cache_key, embedding)\n    return embedding\n\n# Optimize batch processing\nasync def process_documents(documents):\n    backend = LLMFactory.create_backend('ollama')\n    tasks = [asyncio.create_task(backend.generate(doc)) for doc in documents]\n    results = await asyncio.gather(*tasks)\n    return results\n```",
+      "testStrategy": "1. Benchmark performance before and after implementing caching.\n2. Test cache hit rates and invalidation strategies.\n3. Verify that caching doesn't introduce inconsistencies in results.\n4. Test parallel processing with varying numbers of documents.\n5. Conduct load testing to ensure system stability under high concurrency.\n6. Profile memory usage to detect any leaks or excessive consumption.",
+      "priority": "medium",
+      "dependencies": [
+        36,
+        38
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 41,
+      "title": "Enhance Error Handling and Logging",
+      "description": "Improve error handling throughout the system and implement comprehensive logging for better diagnostics and user feedback.",
+      "details": "1. Implement a custom exception hierarchy for different error types.\n2. Use structured logging with contextual information.\n3. Implement a global error handler for the FastAPI application.\n4. Create user-friendly error messages for common issues.\n5. Implement logging rotation and archiving.\n\nExample implementation:\n```python\nimport logging\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import JSONResponse\n\nclass OllamaConnectionError(Exception):\n    pass\n\nclass ModelNotFoundError(Exception):\n    pass\n\nlogging.basicConfig(level=logging.INFO,\n                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',\n                    filename='lawfirm_rag.log',\n                    filemode='a')\nlogger = logging.getLogger(__name__)\n\napp = FastAPI()\n\n@app.exception_handler(OllamaConnectionError)\nasync def ollama_connection_exception_handler(request: Request, exc: OllamaConnectionError):\n    logger.error(f'Ollama connection error: {str(exc)}')\n    return JSONResponse(\n        status_code=503,\n        content={'message': 'Unable to connect to Ollama. Please check if Ollama is running.'}\n    )\n\n@app.exception_handler(ModelNotFoundError)\nasync def model_not_found_exception_handler(request: Request, exc: ModelNotFoundError):\n    logger.error(f'Model not found: {str(exc)}')\n    return JSONResponse(\n        status_code=404,\n        content={'message': f'The requested model was not found. Available models: {available_models}'}\n    )\n\n@app.middleware('http')\nasync def log_requests(request: Request, call_next):\n    logger.info(f'Request: {request.method} {request.url}')\n    response = await call_next(request)\n    logger.info(f'Response: {response.status_code}')\n    return response\n```",
+      "testStrategy": "1. Write unit tests for custom exceptions and error handlers.\n2. Test logging output for various scenarios (info, warnings, errors).\n3. Verify that sensitive information is not logged.\n4. Test log rotation and archiving functionality.\n5. Conduct integration tests to ensure proper error propagation.\n6. Verify that error messages are user-friendly and actionable.",
+      "priority": "medium",
+      "dependencies": [
+        36,
+        37,
+        39
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 42,
+      "title": "Create Migration Guide and Update Documentation",
+      "description": "Develop a comprehensive migration guide for existing users and update all documentation to reflect the new Ollama integration.",
+      "details": "1. Write a step-by-step migration guide for users upgrading from the llama-cpp-python version.\n2. Update the README.md with new installation instructions and Ollama requirements.\n3. Revise API documentation to include new Ollama-related endpoints and parameters.\n4. Create tutorials for common use cases with the new Ollama backend.\n5. Update any existing user guides or manuals.\n6. Prepare release notes detailing the changes and improvements.\n\nMigration guide outline:\n1. Introduction to the Ollama integration\n2. Prerequisites (installing Ollama, supported versions)\n3. Backing up existing configurations and data\n4. Updating the lawfirm-rag package\n5. Configuring the Ollama backend\n6. Migrating existing models and configurations\n7. Verifying the installation and troubleshooting common issues\n\nExample README.md updates:\n```markdown\n# LawFirm-RAG Package\n\n## New in version 2.0: Ollama Integration\n\nWe've migrated from llama-cpp-python to Ollama for improved performance and easier setup.\n\n### Prerequisites\n\n- Python 3.8+\n- [Ollama](https://github.com/ollama/ollama) installed and running\n\n### Installation\n\n```bash\npip install lawfirm-rag\n```\n\n### Quick Start\n\n1. Ensure Ollama is running\n2. Set up the Ollama backend:\n   ```bash\n   lawfirm-rag config set-backend ollama\n   ```\n3. Run your first analysis:\n   ```bash\n   lawfirm-rag analyze document.pdf\n   ```\n\n### Migrating from 1.x\n\nIf you're upgrading from a previous version, please see our [Migration Guide](MIGRATION.md).\n```",
+      "testStrategy": "1. Have team members follow the migration guide to verify its accuracy.\n2. Test code samples and commands in the documentation for correctness.\n3. Review documentation for clarity and completeness.\n4. Verify that all new features and changes are properly documented.\n5. Conduct user acceptance testing with the updated documentation.\n6. Gather feedback from beta testers on the migration process and documentation clarity.",
+      "priority": "high",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 43,
+      "title": "Conduct Thorough Testing and Quality Assurance",
+      "description": "Perform comprehensive testing of the entire system with the new Ollama integration, including unit tests, integration tests, and end-to-end testing.",
+      "details": "1. Update and expand the existing test suite to cover new Ollama-related functionality.\n2. Implement integration tests that verify the interaction between different components.\n3. Create end-to-end tests that simulate real-world usage scenarios.\n4. Perform cross-platform testing (Windows, macOS, Linux).\n5. Conduct performance benchmarks comparing the new Ollama backend with the previous implementation.\n6. Test backward compatibility with existing data and configurations.\n\nExample test cases:\n```python\nimport unittest\nfrom unittest.mock import patch\nfrom lawfirm_rag.llm import LLMFactory, OllamaBackend\n\nclass TestOllamaIntegration(unittest.TestCase):\n    def setUp(self):\n        self.backend = LLMFactory.create_backend('ollama')\n\n    @patch('lawfirm_rag.llm.OllamaClient.generate')\n    def test_text_generation(self, mock_generate):\n        mock_generate.return_value = {'response': 'Generated text'}\n        result = self.backend.generate('Test prompt')\n        self.assertEqual(result, 'Generated text')\n        mock_generate.assert_called_once_with('Test prompt')\n\n    @patch('lawfirm_rag.llm.OllamaClient.embeddings')\n    def test_embeddings(self, mock_embeddings):\n        mock_embeddings.return_value = [0.1, 0.2, 0.3]\n        result = self.backend.embeddings('Test text')\n        self.assertEqual(result, [0.1, 0.2, 0.3])\n        mock_embeddings.assert_called_once_with('Test text')\n\n    def test_model_switching(self):\n        self.backend.set_model('llama2')\n        self.assertEqual(self.backend.current_model, 'llama2')\n        self.backend.set_model('gpt4')\n        self.assertEqual(self.backend.current_model, 'gpt4')\n\n    @patch('lawfirm_rag.llm.OllamaClient.list_models')\n    def test_model_listing(self, mock_list_models):\n        mock_list_models.return_value = ['model1', 'model2']\n        models = self.backend.list_available_models()\n        self.assertEqual(models, ['model1', 'model2'])\n        mock_list_models.assert_called_once()\n\nif __name__ == '__main__':\n    unittest.main()\n```\n\nPerformance benchmark script:\n```python\nimport time\nfrom lawfirm_rag.llm import LLMFactory\n\ndef benchmark_generation(backend, prompt, iterations=100):\n    start_time = time.time()\n    for _ in range(iterations):\n        backend.generate(prompt)\n    end_time = time.time()\n    return (end_time - start_time) / iterations\n\nollama_backend = LLMFactory.create_backend('ollama')\nllama_cpp_backend = LLMFactory.create_backend('llama-cpp')\n\nprompt = 'Analyze the legal implications of AI in healthcare'\n\nollama_time = benchmark_generation(ollama_backend, prompt)\nllama_cpp_time = benchmark_generation(llama_cpp_backend, prompt)\n\nprint(f'Ollama average generation time: {ollama_time:.4f} seconds')\nprint(f'llama-cpp average generation time: {llama_cpp_time:.4f} seconds')\n```",
+      "testStrategy": "1. Run the full test suite on multiple platforms (Windows, macOS, Linux).\n2. Conduct code reviews for all new tests to ensure coverage and correctness.\n3. Perform manual testing of edge cases and complex scenarios.\n4. Use code coverage tools to identify and address any gaps in test coverage.\n5. Run performance benchmarks and compare results with previous implementation.\n6. Conduct user acceptance testing with a group of beta testers.\n7. Document all test results and address any issues before final release.",
+      "priority": "high",
+      "dependencies": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42
+      ],
+      "status": "pending",
       "subtasks": []
     }
   ]

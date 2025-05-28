@@ -1,0 +1,17 @@
+llm:
+  backend: ollama
+  ollama:
+    base_url: http://localhost:11434
+    default_model: law-chat
+    default_embed_model: mxbai-embed-large
+    timeout: 30
+    max_retries: 3
+    retry_delay: 1.0
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  cors_origins: ["*"]
+
+logging:
+  level: INFO 

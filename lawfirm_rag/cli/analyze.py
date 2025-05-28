@@ -48,17 +48,21 @@ def analyze_documents(
     doc_processor = DocumentProcessor()
     ai_engine = None
     
-    # Try to load AI model if configured
-    model_path = config_data.get("model", {}).get("path")
-    if model_path:
-        model_path = Path(model_path).expanduser()
-        if model_path.exists():
-            ai_engine = AIEngine(str(model_path))
-            if not ai_engine.load_model():
-                console.print("[yellow]Warning: Could not load AI model. Using fallback analysis.[/yellow]")
-                ai_engine = None
+    # Try to load AI model using new backend system
+    try:
+        from ..core.ai_engine import create_ai_engine_from_config
+        
+        ai_engine = create_ai_engine_from_config(config_data)
+        
+        if not ai_engine.load_model():
+            console.print("[yellow]Warning: Could not load AI model with new backend system. Using fallback analysis.[/yellow]")
+            ai_engine = None
         else:
-            console.print(f"[yellow]Warning: Model file not found at {model_path}[/yellow]")
+            console.print("[green]AI model loaded successfully with new backend system[/green]")
+            
+    except Exception as e:
+        console.print(f"[yellow]Warning: Failed to initialize AI engine: {e}. Using fallback analysis.[/yellow]")
+        ai_engine = None
     
     # Collect all files to process
     file_paths = []

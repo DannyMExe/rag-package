@@ -15,6 +15,8 @@ import threading
 
 from .ai_engine import AIEngine
 from .model_downloader import ModelDownloader
+from .ai_engine import create_ai_engine_from_config
+from ..utils.config import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +118,21 @@ class ModelManager:
             try:
                 logger.info(f"Loading model {model_variant} from {model_path}")
                 
-                # Create AI engine instance
-                ai_engine = AIEngine()
+                # Create AI engine instance using new abstraction layer
+                from .ai_engine import create_ai_engine_from_config
+                from ..utils.config import ConfigManager
+                
+                # Get configuration for backend selection
+                config_manager = ConfigManager()
+                config = config_manager.get_config()
+                
+                # Create AI engine with backend auto-detection
+                ai_engine = create_ai_engine_from_config(config)
+                
+                # For model manager, we need to set the specific model path
+                # Override the model path for llama-cpp backend
+                if hasattr(ai_engine, 'backend') and hasattr(ai_engine.backend, 'model_path'):
+                    ai_engine.backend.model_path = model_path
                 
                 # Load the model
                 if not ai_engine.load_model(model_path):

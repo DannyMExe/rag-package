@@ -25,6 +25,9 @@ class ConfigManager:
         self.config_path = self._resolve_config_path(config_path)
         self.config_data = self._load_config()
         
+        # Automatically migrate legacy configuration if needed
+        self.migrate_legacy_config()
+        
     def _resolve_config_path(self, config_path: Optional[str]) -> Path:
         """Resolve the configuration file path.
         
@@ -78,6 +81,26 @@ class ConfigManager:
             Default configuration dictionary.
         """
         return {
+            "llm": {
+                "backend": "ollama",  # Force Ollama instead of auto-detection
+                "ollama": {
+                    "base_url": "http://localhost:11434",
+                    "default_model": "law-chat",
+                    "default_embed_model": "mxbai-embed-large",
+                    "timeout": 30,
+                    "max_retries": 3,
+                    "retry_delay": 1.0
+                },
+                "llama_cpp": {
+                    "model_path": "~/.lawfirm-rag/models/default.gguf",
+                    "n_ctx": 4096,
+                    "n_batch": 512,
+                    "n_threads": None,
+                    "temperature": 0.7,
+                    "max_tokens": 1000
+                }
+            },
+            # Legacy model section for backward compatibility
             "model": {
                 "path": "~/.lawfirm-rag/models/default.gguf",
                 "context_length": 4096,
@@ -234,4 +257,88 @@ class ConfigManager:
         
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"Ensured directory exists: {directory}") 
+            logger.debug(f"Ensured directory exists: {directory}")
+    
+    def get_llm_backend(self) -> str:
+        """Get the configured LLM backend type.
+        
+        Returns:
+            Backend type string ("auto", "ollama", "llama-cpp")
+        """
+        return self.get_option("llm.backend", "auto")
+    
+    def set_llm_backend(self, backend: str) -> None:
+        """Set the LLM backend type.
+        
+        Args:
+            backend: Backend type ("auto", "ollama", "llama-cpp")
+        """
+        if backend not in ["auto", "ollama", "llama-cpp"]:
+            raise ValueError(f"Invalid backend type: {backend}")
+        self.set_option("llm.backend", backend)
+    
+    def get_ollama_config(self) -> Dict[str, Any]:
+        """Get Ollama backend configuration.
+        
+        Returns:
+            Ollama configuration dictionary
+        """
+        return self.get_option("llm.ollama", {})
+    
+    def get_llama_cpp_config(self) -> Dict[str, Any]:
+        """Get llama-cpp-python backend configuration.
+        
+        Returns:
+            llama-cpp-python configuration dictionary
+        """
+        return self.get_option("llm.llama_cpp", {})
+    
+    def get_llm_config_for_backend(self, backend: str) -> Dict[str, Any]:
+        """Get configuration for a specific backend.
+        
+        Args:
+            backend: Backend type ("ollama" or "llama-cpp")
+            
+        Returns:
+            Backend-specific configuration dictionary
+        """
+        if backend == "ollama":
+            return self.get_ollama_config()
+        elif backend in ["llama-cpp", "llama_cpp", "llamacpp"]:
+            return self.get_llama_cpp_config()
+        else:
+            raise ValueError(f"Unknown backend type: {backend}")
+    
+    def migrate_legacy_config(self) -> bool:
+        """Migrate legacy model configuration to new LLM structure.
+        
+        Returns:
+            True if migration was performed, False if not needed
+        """
+        # Check if we have legacy config but no new LLM config
+        legacy_model = self.get_option("model", {})
+        llm_config = self.get_option("llm", {})
+        
+        # If we have a legacy model path but no LLM backend config, migrate
+        if legacy_model.get("path") and not llm_config.get("backend"):
+            logger.info("Migrating legacy model configuration to new LLM structure")
+            
+            # Set backend to llama-cpp since legacy used direct model paths
+            self.set_option("llm.backend", "llama-cpp")
+            
+            # Migrate model settings
+            if "path" in legacy_model:
+                self.set_option("llm.llama_cpp.model_path", legacy_model["path"])
+            if "context_length" in legacy_model:
+                self.set_option("llm.llama_cpp.n_ctx", legacy_model["context_length"])
+            if "threads" in legacy_model:
+                self.set_option("llm.llama_cpp.n_threads", legacy_model["threads"])
+            if "temperature" in legacy_model:
+                self.set_option("llm.llama_cpp.temperature", legacy_model["temperature"])
+            if "max_tokens" in legacy_model:
+                self.set_option("llm.llama_cpp.max_tokens", legacy_model["max_tokens"])
+            
+            logger.info("Legacy configuration migration completed")
+            return True
+        
+        return False 

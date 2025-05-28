@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..core.document_processor import DocumentProcessor
-from ..core.ai_engine import AIEngine
+from ..core.ai_engine import AIEngine, create_ai_engine_from_config
 from ..core.query_generator import QueryGenerator
 from ..core.model_downloader import ModelDownloader, ModelDownloadError
 from ..core.model_manager import ModelManager
@@ -62,20 +62,22 @@ def initialize_ai_components():
     """Initialize AI engine and query generator."""
     global ai_engine, query_generator
     
-    config = config_manager.get_config()
-    model_path = config.get("model", {}).get("path")
-    
-    if model_path:
-        model_path = Path(model_path).expanduser()
-        if model_path.exists():
-            ai_engine = AIEngine(str(model_path))
-            if ai_engine.load_model():
-                query_generator = QueryGenerator(ai_engine)
-                logger.info("AI components initialized successfully")
-            else:
-                logger.warning("Failed to load AI model")
+    try:
+        # Use new configuration-based AI engine creation
+        config = config_manager.get_config()
+        ai_engine = create_ai_engine_from_config(config)
+        
+        # Try to load the model
+        if ai_engine.load_model():
+            query_generator = QueryGenerator(ai_engine)
+            logger.info("AI components initialized successfully with new backend system")
         else:
-            logger.warning(f"Model file not found: {model_path}")
+            logger.warning("Failed to load AI model with new backend system")
+            ai_engine = None
+            
+    except Exception as e:
+        logger.warning(f"Failed to initialize AI components with new backend: {e}")
+        ai_engine = None
     
     # Fallback query generator without AI
     if not query_generator:

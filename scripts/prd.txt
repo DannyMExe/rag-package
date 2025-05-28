@@ -186,4 +186,58 @@ lawfirm_rag/
 - **Feature Parity**: Package may lack desktop app features → Mitigation: Prioritize core features, maintain feature roadmap
 - **Support Burden**: Increased support requests → Mitigation: Excellent documentation, automated testing, community support
 
-This transformation will modernize the LawFirm-RAG project, making it more accessible, maintainable, and suitable for a wider range of deployment scenarios while maintaining all core functionality. 
+This transformation will modernize the LawFirm-RAG project, making it more accessible, maintainable, and suitable for a wider range of deployment scenarios while maintaining all core functionality.
+
+# Product Requirements Document: Lawfirm RAG Package Ollama Integration
+
+## Background
+The current implementation of the lawfirm-rag-package relies on llama-cpp-python, which has been causing installation issues for users due to compilation requirements. To make the package more accessible and user-friendly, we need to migrate from direct llama-cpp-python dependencies to using Ollama as the LLM inference backend.
+
+## Goals
+1. Replace the direct llama-cpp-python dependency with Ollama integration
+2. Maintain all existing functionality of the RAG system
+3. Provide a smooth migration path for existing users
+4. Simplify installation and setup process
+5. Support the same models and features currently available
+
+## Technical Requirements
+
+### Ollama Integration
+- Implement a client interface to communicate with the Ollama API
+- Support all current LLM operations (text generation, embeddings, etc.)
+- Handle model loading and management through Ollama
+- Provide configuration options for Ollama connection parameters
+- Implement proper error handling for Ollama API communication
+
+### Architecture Changes
+- Create an abstraction layer for LLM operations that can work with different backends
+- Refactor current llama-cpp-python code to use the new abstraction layer
+- Make Ollama the default backend while keeping compatibility with llama-cpp-python as an optional feature
+- Update documentation to reflect the new architecture
+
+### User Experience
+- Maintain the same CLI interface and functionality
+- Provide clear installation instructions for Ollama
+- Ensure the web interface works with the Ollama backend
+- Add helpful error messages if Ollama is not installed or running
+
+### Testing Requirements
+- Test all existing functionality with the Ollama backend
+- Compare results between llama-cpp-python and Ollama to ensure consistency
+- Test installation and setup process on multiple platforms
+
+## Non-functional Requirements
+- Performance should be comparable to the current implementation
+- Security considerations for API communication
+- Documentation updates for the new architecture
+
+## Constraints
+- Ollama must be installed separately by the user
+- The integration should work with the latest version of Ollama
+- Backward compatibility with existing models and data
+
+## Deliverables
+1. Updated package with Ollama integration
+2. Updated documentation
+3. Migration guide for existing users
+4. Tests for the new implementation 

@@ -5,7 +5,7 @@ A modern Python package for legal document analysis, query generation,
 and AI-powered legal research assistance.
 """
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __author__ = "dannymexe"
 __email__ = "dannyjmargolin@gmail.com"
 
