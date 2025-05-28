@@ -31,7 +31,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Office/Business :: Legal",
     "Topic :: Text Processing :: Linguistic",
 ]
 requires-python = ">=3.8"
