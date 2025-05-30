@@ -14,6 +14,9 @@ import logging
 from datetime import datetime
 import hashlib
 import json
+import concurrent.futures
+import threading
+from functools import partial
 
 # Text extraction libraries
 try:
@@ -549,16 +552,238 @@ class EnhancedDocumentProcessor:
         
         return processed_doc
     
-    def process_uploaded_files(self, files: List[Any], collection_id: str) -> Dict[str, Any]:
+    def _fast_extract_pdf_text(self, file_path: Path) -> str:
+        """Fast PDF text extraction using the best available method."""
+        # Use PyMuPDF first for speed if available
+        if PYMUPDF_AVAILABLE:
+            try:
+                doc = fitz.open(file_path)
+                text_parts = []
+                for page_num in range(doc.page_count):
+                    page = doc[page_num]
+                    text_parts.append(page.get_text())
+                doc.close()
+                return "\n\n".join(text_parts)
+            except Exception as e:
+                logger.warning(f"PyMuPDF fast extraction failed: {e}")
+        
+        # Fallback to pdfplumber
+        if PDFPLUMBER_AVAILABLE:
+            try:
+                with pdfplumber.open(file_path) as pdf:
+                    text_parts = []
+                    for page in pdf.pages:
+                        page_text = page.extract_text()
+                        if page_text:
+                            text_parts.append(page_text)
+                return "\n\n".join(text_parts)
+            except Exception as e:
+                logger.warning(f"pdfplumber fast extraction failed: {e}")
+        
+        # Last resort: use the original method
+        return self._extract_pdf_text(file_path)
+    
+    def _fast_chunk_text(self, text: str, metadata: Dict[str, Any]) -> List[DocumentChunk]:
+        """Fast text chunking with simplified boundary detection."""
+        if len(text) <= self.chunk_size:
+            return [DocumentChunk(text, 0, metadata)]
+        
+        chunks = []
+        start = 0
+        chunk_id = 0
+        
+        while start < len(text):
+            end = start + self.chunk_size
+            
+            # Simple boundary detection: look for nearest space
+            if end < len(text):
+                # Find the last space within 100 chars of the boundary
+                search_start = max(end - 100, start + 100)  # Don't make chunks too small
+                space_pos = text.rfind(' ', search_start, end)
+                if space_pos > search_start:
+                    end = space_pos
+            
+            chunk_text = text[start:end].strip()
+            if chunk_text:
+                chunk_metadata = metadata.copy()
+                chunk_metadata.update({
+                    "chunk_id": chunk_id,
+                    "start_char": start,
+                    "end_char": end,
+                    "chunk_length": len(chunk_text)
+                })
+                
+                chunks.append(DocumentChunk(chunk_text, chunk_id, chunk_metadata))
+                chunk_id += 1
+            
+            # Move start position with overlap
+            start = end - self.chunk_overlap
+            if start >= len(text):
+                break
+        
+        return chunks
+    
+    def _fast_extract_metadata(self, text: str, filename: str) -> Dict[str, Any]:
+        """Fast metadata extraction with essential info only."""
+        return {
+            "filename": filename,
+            "text_length": len(text),
+            "processed_at": datetime.now().isoformat(),
+            "word_count": len(text.split()),
+            "document_hash": hashlib.md5(text.encode()).hexdigest(),
+            "document_type": "legal_document"  # Simplified - detailed analysis can be done later
+        }
+    
+    def _process_single_file_fast(self, file_data: Tuple[Any, str]) -> Tuple[Optional[ProcessedDocument], Optional[str]]:
+        """Process a single file quickly - designed for parallel execution."""
+        file, collection_id = file_data
+        temp_path = None
+        
+        try:
+            # Get filename safely
+            filename = getattr(file, 'filename', 'unknown')
+            if not filename or filename == 'unknown':
+                filename = f"document_{threading.current_thread().ident}.pdf"
+            
+            # Sanitize filename
+            safe_filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+            
+            # Create unique temp file path
+            temp_path = self.temp_dir / f"{uuid.uuid4()}_{safe_filename}"
+            
+            # Handle file content
+            if hasattr(file, 'read'):
+                content = file.read()
+                if hasattr(file, 'seek'):
+                    file.seek(0)
+            else:
+                content = file
+            
+            # Ensure content is bytes
+            if isinstance(content, str):
+                content = content.encode('utf-8')
+            elif not isinstance(content, bytes):
+                raise ValueError(f"Invalid file content type: {type(content)}")
+            
+            if not content:
+                raise ValueError("File appears to be empty")
+            
+            # Write temp file
+            with open(temp_path, "wb") as temp_file:
+                temp_file.write(content)
+            
+            # Fast text extraction
+            ext = temp_path.suffix.lower()
+            if ext == ".pdf":
+                text = self._fast_extract_pdf_text(temp_path)
+            elif ext == ".docx":
+                text = self._extract_docx_text(temp_path)
+            elif ext == ".txt":
+                text = self._extract_txt_text(temp_path)
+            elif ext == ".json":
+                text = self._extract_json_text(temp_path)
+            else:
+                raise ValueError(f"Unsupported file format: {ext}")
+            
+            # Clean text
+            text = self._clean_text(text)
+            
+            # Fast metadata extraction
+            metadata = self._fast_extract_metadata(text, temp_path.name)
+            metadata["collection_id"] = collection_id
+            
+            # Fast chunking
+            chunks = self._fast_chunk_text(text, metadata)
+            
+            # Create processed document
+            processed_doc = ProcessedDocument(
+                filename=temp_path.name,
+                original_text=text,
+                chunks=chunks,
+                metadata=metadata
+            )
+            
+            return processed_doc, None
+            
+        except Exception as e:
+            error_msg = f"Error processing {getattr(file, 'filename', 'unknown')}: {e}"
+            logger.error(error_msg)
+            return None, error_msg
+            
+        finally:
+            # Clean up temp file
+            if temp_path and temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temp file {temp_path}: {cleanup_error}")
+    
+    def process_uploaded_files_fast(self, files: List[Any], collection_id: str, max_workers: int = 4) -> Dict[str, Any]:
+        """Process multiple uploaded files in parallel for much faster processing.
+        
+        Args:
+            files: List of uploaded file objects
+            collection_id: ID of the collection to add documents to
+            max_workers: Maximum number of parallel workers (default: 4)
+            
+        Returns:
+            Processing results dictionary
+        """
+        if collection_id not in self.collections:
+            raise ValueError(f"Collection {collection_id} does not exist")
+        
+        # Prepare file data for parallel processing
+        file_data = [(file, collection_id) for file in files]
+        
+        processed_documents = []
+        errors = []
+        
+        # Process files in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all files for processing
+            future_to_file = {
+                executor.submit(self._process_single_file_fast, data): data[0] 
+                for data in file_data
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_file):
+                processed_doc, error = future.result()
+                
+                if processed_doc:
+                    # Store document and add to collection
+                    self.documents[processed_doc.document_id] = processed_doc
+                    self.collections[collection_id]["documents"].append(processed_doc.document_id)
+                    processed_documents.append(processed_doc)
+                    logger.info(f"Successfully processed: {processed_doc.filename}")
+                
+                if error:
+                    errors.append(error)
+        
+        return {
+            "collection_id": collection_id,
+            "processed_documents": len(processed_documents),
+            "total_chunks": sum(len(doc.chunks) for doc in processed_documents),
+            "total_text_length": sum(doc.get_total_length() for doc in processed_documents),
+            "documents": [doc.to_dict() for doc in processed_documents],
+            "errors": errors
+        }
+    
+    def process_uploaded_files(self, files: List[Any], collection_id: str, use_fast_mode: bool = True) -> Dict[str, Any]:
         """Process multiple uploaded files and add them to a collection.
         
         Args:
             files: List of uploaded file objects
             collection_id: ID of the collection to add documents to
+            use_fast_mode: Whether to use parallel processing (default: True)
             
         Returns:
             Processing results dictionary
         """
+        if use_fast_mode:
+            return self.process_uploaded_files_fast(files, collection_id)
+        
+        # Original sequential processing for compatibility
         if collection_id not in self.collections:
             raise ValueError(f"Collection {collection_id} does not exist")
         

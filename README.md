@@ -53,12 +53,56 @@ The system is **complete and working end-to-end** with all major features implem
 
 ## 🚀 Quick Start
 
-### Installation
+### 💻 Professional Installation & Setup
+
 ```bash
-pip install lawfirm-rag-package
+# 1. Install the RAG CLI tool (requires Python 3.11+)
+pip install rag-package
+
+# 2. Set up isolated environment with all AI/ML dependencies  
+rag setup
+
+# 3. Start the web interface
+rag serve
+
+# 🎉 Your browser opens automatically to http://localhost:8000
+#    Upload documents and start analyzing!
 ```
 
-### Basic Usage
+**Why the setup step?** This AI/ML package requires specific versions of PyTorch, ChromaDB, and other dependencies. The `rag setup` command creates an isolated environment to prevent conflicts with your other Python projects.
+
+### ⚡ What You Get
+- **Isolated Environment**: No conflicts with other AI/ML projects
+- **Optimized Dependencies**: Exact versions tested for compatibility  
+- **Professional UI**: Modern web interface for document analysis
+- **Immediate Start**: Upload documents and start analyzing right away
+
+**Ready to Use:**
+- Upload legal documents (PDF, DOCX, TXT)
+- Run AI analysis and summarization
+- Generate legal database queries
+- Search through your document collection
+
+### 🔧 Advanced Options
+
+```bash
+# Recreate environment (if issues occur)
+rag setup --force
+
+# Activate existing environment 
+rag setup --activate
+
+# Custom server options
+rag serve --port 3000 --host 0.0.0.0
+
+# CLI document analysis (after setup)
+rag analyze document.pdf
+
+# Generate legal queries
+rag query contract.pdf --database westlaw
+```
+
+### 🐍 Programmatic Usage
 
 #### 1. Start the Web Interface
 ```bash
@@ -134,10 +178,21 @@ if ai_engine.load_model():
 ## 🔧 System Requirements
 
 ### Required Dependencies
-- **Python**: 3.8+ (tested on 3.8, 3.9, 3.10, 3.11)
-- **PyTorch**: 2.1.0+cpu (with compatibility fixes)
-- **ChromaDB**: Vector database storage
-- **Sentence Transformers**: Local embedding generation
+- **Python**: 3.11+ (recommended: 3.11 or 3.12)
+- **Automatic Environment**: The `rag setup` command automatically creates an isolated environment with:
+  - PyTorch 2.1.0 (CPU version with compatibility fixes)
+  - ChromaDB 0.4.15 (vector database) 
+  - Sentence Transformers 2.2.2 (embeddings)
+  - FastAPI + Uvicorn (web interface)
+  - Rich CLI interface
+  - All other dependencies with exact pinned versions
+
+### Why Isolated Environment?
+This package uses **specific versions** of AI/ML libraries that may conflict with other projects. The automatic environment setup ensures:
+- ✅ **No Conflicts**: Won't break your other Python projects
+- ✅ **Exact Versions**: Uses tested combinations of PyTorch + ChromaDB + transformers
+- ✅ **Professional Setup**: Same approach used by Anaconda, Ollama, etc.
+- ✅ **Easy Management**: Single command setup and activation
 
 ### Optional AI Backends
 - **Ollama**: Easy local model management (recommended)

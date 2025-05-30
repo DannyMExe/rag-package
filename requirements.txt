@@ -33,20 +33,27 @@ python-dotenv>=1.0.0
 # psutil>=5.9.0  # For memory monitoring in model manager
 
 # Document processing - enhanced
-pdfplumber>=0.9.0  # Better PDF text extraction
-PyMuPDF>=1.23.0    # Alternative PDF processor (fitz)
+pdfplumber==0.9.0    # Better PDF text extraction - pinned for stability
+PyMuPDF==1.23.8      # Alternative PDF processor (fitz) - pinned for stability
 
-# Vector database and embeddings
-chromadb>=0.4.0    # Local vector database
-numpy>=1.21.0      # Required for embeddings
-sentence-transformers>=2.2.0  # Local embedding models
-torch>=1.9.0       # Required for sentence-transformers (CPU version)
+# Vector database and embeddings - PINNED VERSIONS FOR COMPATIBILITY
+chromadb==0.4.15     # Local vector database - pinned for stability
+numpy==1.24.3        # Required for embeddings - pinned for compatibility
+sentence-transformers==2.2.2  # Local embedding models - pinned for compatibility
+torch==2.1.0         # Required for sentence-transformers (CPU version) - pinned for compatibility
+torchvision==0.16.0  # Added for torch compatibility
+torchaudio==2.1.0    # Added for torch compatibility
 
 # Note: For GPU acceleration, install torch with CUDA:
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# pip install torch==2.1.0+cu118 torchvision==0.16.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
 
 # AI/ML backends
-ollama>=0.1.7      # Ollama Python client
+ollama==0.1.9        # Ollama Python client - pinned for stability
+
+# Additional ML dependencies for stability
+transformers==4.35.2  # Transformers library - pinned for compatibility with sentence-transformers
+tokenizers==0.15.0    # Tokenizers library - pinned for compatibility
+huggingface-hub==0.19.4  # HuggingFace Hub - pinned for compatibility
 
 # Optional: Additional text processing
 # textstat>=0.7.3    # Text statistics
