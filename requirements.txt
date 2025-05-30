@@ -1,21 +1,21 @@
 # Core dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-requests>=2.31.0
-pydantic>=2.0.0
+fastapi>=0.68.0
+uvicorn>=0.15.0
+requests>=2.25.0
+pydantic>=1.8.0
 
 # Document processing
 PyPDF2>=3.0.0
 python-docx>=0.8.11
-python-multipart>=0.0.6
+python-multipart>=0.0.5
 
 # CLI and UI
-rich>=13.0.0
-click>=8.1.0
+rich>=10.0.0
+click>=8.0.0
 Jinja2>=3.1.0
 
 # Configuration and utilities
-PyYAML>=6.0
+PyYAML>=5.4.0
 python-dotenv>=1.0.0
 
 # Optional dependencies:
@@ -30,4 +30,24 @@ python-dotenv>=1.0.0
 # mypy>=1.0.0
 
 # Optional dependencies for enhanced functionality
-# psutil>=5.9.0  # For memory monitoring in model manager 
+# psutil>=5.9.0  # For memory monitoring in model manager
+
+# Document processing - enhanced
+pdfplumber>=0.9.0  # Better PDF text extraction
+PyMuPDF>=1.23.0    # Alternative PDF processor (fitz)
+
+# Vector database and embeddings
+chromadb>=0.4.0    # Local vector database
+numpy>=1.21.0      # Required for embeddings
+sentence-transformers>=2.2.0  # Local embedding models
+torch>=1.9.0       # Required for sentence-transformers (CPU version)
+
+# Note: For GPU acceleration, install torch with CUDA:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# AI/ML backends
+ollama>=0.1.7      # Ollama Python client
+
+# Optional: Additional text processing
+# textstat>=0.7.3    # Text statistics
+# spacy>=3.4.0       # Advanced NLP (optional) 

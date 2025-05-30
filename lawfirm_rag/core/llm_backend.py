@@ -13,6 +13,7 @@ import os
 import json
 
 from .ollama_client import OllamaClient, OllamaConnectionError, OllamaModelError
+from ..utils.config import get_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -181,21 +182,24 @@ class OllamaBackend(LLMBackend):
     
     def __init__(self, 
                  base_url: Optional[str] = None,
-                 default_model: str = "llama3.2",
-                 default_embed_model: str = "mxbai-embed-large",
+                 default_model: Optional[str] = None,
+                 default_embed_model: Optional[str] = None,
                  **kwargs):
         """Initialize Ollama backend.
         
         Args:
             base_url: Ollama server URL
-            default_model: Default model for text generation
-            default_embed_model: Default model for embeddings
+            default_model: Default model for text generation (if None, uses config)
+            default_embed_model: Default model for embeddings (if None, uses config)
             **kwargs: Additional configuration parameters
         """
         super().__init__(**kwargs)
         self.base_url = base_url
-        self.default_model = default_model
-        self.default_embed_model = default_embed_model
+        
+        # Use configured models if not explicitly provided
+        self.default_model = default_model or get_model_name("chat")
+        self.default_embed_model = default_embed_model or get_model_name("embeddings")
+        
         self.client = None
     
     def initialize(self) -> bool:

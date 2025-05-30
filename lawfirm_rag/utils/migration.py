@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 
+from .config import DEFAULT_MODELS, get_model_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,6 +23,7 @@ class ConfigMigrator:
     def __init__(self):
         """Initialize the configuration migrator."""
         self.migration_log = []
+        self.supported_versions = ["legacy", "1.0"]
     
     def detect_config_version(self, config: Dict[str, Any]) -> str:
         """Detect the version/format of a configuration.
@@ -62,16 +65,27 @@ class ConfigMigrator:
         return self._create_default_v1_config(), migration_notes
     
     def _migrate_legacy_config(self, config: Dict[str, Any], notes: List[str]) -> Tuple[Dict[str, Any], List[str]]:
-        """Migrate legacy configuration format.
+        """Migrate legacy configuration to v1.0 format.
         
         Args:
-            config: Legacy configuration
+            config: Legacy configuration dictionary
             notes: List to append migration notes to
             
         Returns:
-            Tuple of (migrated_config, migration_notes)
+            Tuple of (migrated_config, updated_notes)
         """
-        migrated = config.copy()
+        notes.append("Migrating legacy configuration to v1.0 format")
+        
+        # Start with default v1 configuration
+        migrated = self._create_default_v1_config()
+        
+        # Preserve any existing non-model settings
+        for key, value in config.items():
+            if key not in ["model", "llm"]:  # Don't copy legacy model or partial llm configs
+                migrated[key] = value
+                notes.append(f"Preserved existing setting: {key}")
+        
+        # Handle legacy model configuration
         legacy_model = config.get("model", {})
         
         # Create new LLM structure
@@ -79,8 +93,8 @@ class ConfigMigrator:
             "backend": "llama-cpp",  # Legacy always used direct model paths
             "ollama": {
                 "base_url": "http://localhost:11434",
-                "default_model": "llama3.2",
-                "default_embed_model": "mxbai-embed-large",
+                "default_model": get_model_name("chat"),
+                "default_embed_model": get_model_name("embeddings"),
                 "timeout": 30,
                 "max_retries": 3,
                 "retry_delay": 1.0
@@ -135,8 +149,8 @@ class ConfigMigrator:
                 "backend": "auto",
                 "ollama": {
                     "base_url": "http://localhost:11434",
-                    "default_model": "llama3.2",
-                    "default_embed_model": "mxbai-embed-large",
+                    "default_model": get_model_name("chat"),
+                    "default_embed_model": get_model_name("embeddings"),
                     "timeout": 30,
                     "max_retries": 3,
                     "retry_delay": 1.0
@@ -150,6 +164,8 @@ class ConfigMigrator:
                     "max_tokens": 1000
                 }
             },
+            # Model configuration for different use cases
+            "models": DEFAULT_MODELS.copy(),
             "api": {
                 "host": "127.0.0.1",
                 "port": 8000,

@@ -54,38 +54,36 @@ class ModelManager:
         
     def discover_models(self) -> Dict[str, Dict[str, Any]]:
         """
-        Discover all available models in the models directory.
+        Discover all available models through Ollama.
         
         Returns:
             Dictionary mapping model variants to their information
         """
         available_models = {}
         
-        if not self.models_dir.exists():
-            logger.warning(f"Models directory does not exist: {self.models_dir}")
-            return available_models
-        
-        # Use the downloader's discovery functionality
+        # Use the downloader's discovery functionality which works with Ollama
         downloader_models = self.downloader.list_available_models()
         
         for variant, info in downloader_models.items():
-            if info["downloaded"]:
-                model_path = Path(info["path"])
-                if model_path.exists():
-                    available_models[variant] = {
-                        "variant": variant,
-                        "path": str(model_path),
-                        "size": info["size"],
-                        "filename": info["filename"],
-                        "is_loaded": variant in self.loaded_models,
-                        "is_active": variant == self.active_model
-                    }
+            if info["downloaded"] and info["available"]:
+                # For Ollama models, use the model name as both path and identifier
+                available_models[variant] = {
+                    "variant": variant,
+                    "path": variant,  # Use model name as path for Ollama
+                    "size": info["size"],
+                    "filename": variant,  # Use model name as filename
+                    "description": info["description"],
+                    "use_case": info["use_case"],
+                    "type": info["type"],
+                    "is_loaded": variant in self.loaded_models,
+                    "is_active": variant == self.active_model
+                }
         
         return available_models
     
     def load_model(self, model_variant: str, force_reload: bool = False) -> bool:
         """
-        Load a model into memory.
+        Load a model into memory using Ollama.
         
         Args:
             model_variant: The model variant to load
@@ -105,57 +103,48 @@ class ModelManager:
             available_models = self.discover_models()
             
             if model_variant not in available_models:
-                logger.error(f"Model {model_variant} not found or not downloaded")
+                logger.error(f"Model {model_variant} not found or not available in Ollama")
                 return False
-            
-            model_info = available_models[model_variant]
-            model_path = model_info["path"]
             
             # Check memory and unload models if necessary
             if len(self.loaded_models) >= self.max_loaded_models:
                 self._unload_oldest_model()
             
             try:
-                logger.info(f"Loading model {model_variant} from {model_path}")
+                logger.info(f"Loading Ollama model {model_variant}")
                 
-                # Create AI engine instance using new abstraction layer
-                from .ai_engine import create_ai_engine_from_config
-                from ..utils.config import ConfigManager
-                
-                # Get configuration for backend selection
+                # Create AI engine instance using new configuration system
                 config_manager = ConfigManager()
                 config = config_manager.get_config()
                 
-                # Create AI engine with backend auto-detection
+                # Create AI engine with Ollama backend
                 ai_engine = create_ai_engine_from_config(config)
                 
-                # For model manager, we need to set the specific model path
-                # Override the model path for llama-cpp backend
-                if hasattr(ai_engine, 'backend') and hasattr(ai_engine.backend, 'model_path'):
-                    ai_engine.backend.model_path = model_path
-                
-                # Load the model
-                if not ai_engine.load_model(model_path):
-                    logger.error(f"Failed to load model {model_variant}")
+                # For Ollama models, we don't need to load from a file path
+                # The model should already be available in Ollama
+                if not ai_engine.load_model():
+                    logger.error(f"Failed to load Ollama model {model_variant}")
                     return False
                 
                 # Store loaded model info
                 self.loaded_models[model_variant] = {
                     "ai_engine": ai_engine,
-                    "model_path": model_path,
+                    "model_path": model_variant,  # Store model name for Ollama
                     "loaded_at": datetime.now().isoformat(),
                     "memory_usage": self._estimate_memory_usage(),
-                    "variant": model_variant
+                    "variant": model_variant,
+                    "model_variant": model_variant,  # Add this for API compatibility
+                    "is_active": True
                 }
                 
                 # Set as active model
                 self.active_model = model_variant
                 
-                logger.info(f"Successfully loaded model {model_variant}")
+                logger.info(f"Successfully loaded Ollama model {model_variant}")
                 return True
                 
             except Exception as e:
-                logger.error(f"Error loading model {model_variant}: {e}")
+                logger.error(f"Error loading Ollama model {model_variant}: {e}")
                 return False
     
     def unload_model(self, model_variant: str) -> bool:

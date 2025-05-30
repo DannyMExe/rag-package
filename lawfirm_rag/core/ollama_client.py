@@ -14,6 +14,12 @@ import requests
 from pathlib import Path
 import os
 
+from ..utils.config import get_model_name, ConfigManager
+from .exceptions import (
+    ModelNotFoundError, ModelLoadError, ModelTimeoutError,
+    create_model_not_found_error, log_and_raise_model_error
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +29,7 @@ class OllamaConnectionError(Exception):
 
 
 class OllamaModelError(Exception):
-    """Raised when model operations fail."""
+    """Raised when model-related operations fail."""
     pass
 
 
@@ -53,6 +59,73 @@ class OllamaClient:
         self.base_url = self.base_url.rstrip('/')
         
         logger.info(f"Initialized Ollama client with base URL: {self.base_url}")
+        
+        # Cache for model availability checks
+        self._model_cache = {}
+        self._cache_expiry = {}
+        self._cache_duration = 300  # 5 minutes
+    
+    def _is_model_cached(self, model: str) -> Optional[bool]:
+        """Check if model availability is cached and still valid."""
+        if model not in self._model_cache:
+            return None
+        
+        if time.time() > self._cache_expiry.get(model, 0):
+            # Cache expired
+            self._model_cache.pop(model, None)
+            self._cache_expiry.pop(model, None)
+            return None
+        
+        return self._model_cache[model]
+    
+    def _cache_model_availability(self, model: str, available: bool) -> None:
+        """Cache model availability status."""
+        self._model_cache[model] = available
+        self._cache_expiry[model] = time.time() + self._cache_duration
+    
+    def _verify_model_exists(self, model: str, model_type: Optional[str] = None) -> None:
+        """Verify that a model exists before attempting to use it.
+        
+        Args:
+            model: Model name to verify
+            model_type: Type of model for better error messages
+            
+        Raises:
+            ModelNotFoundError: If model is not found
+        """
+        # Check cache first
+        cached_result = self._is_model_cached(model)
+        if cached_result is True:
+            return
+        elif cached_result is False:
+            # Model was previously not found, raise error immediately
+            available_models = self._get_available_model_names()
+            error = create_model_not_found_error(model, model_type or "unknown", available_models)
+            log_and_raise_model_error(error, logger)
+        
+        # Check if model exists
+        try:
+            available_models = self.list_models()
+            model_names = [m["name"] for m in available_models]
+            
+            if model not in model_names:
+                self._cache_model_availability(model, False)
+                error = create_model_not_found_error(model, model_type or "unknown", model_names)
+                log_and_raise_model_error(error, logger)
+            else:
+                self._cache_model_availability(model, True)
+                
+        except (OllamaConnectionError, requests.RequestException) as e:
+            logger.warning(f"Could not verify model existence due to connection error: {e}")
+            # Don't raise here - let the actual operation fail with a more specific error
+    
+    def _get_available_model_names(self) -> List[str]:
+        """Get list of available model names, with error handling."""
+        try:
+            models = self.list_models()
+            return [m["name"] for m in models]
+        except Exception:
+            return []
     
     def _make_request(self, 
                      method: str, 
@@ -142,20 +215,31 @@ class OllamaClient:
     
     def generate(self, 
                 prompt: str, 
-                model: str = "llama3.2",
+                model: Optional[str] = None,
                 stream: bool = False,
                 **options) -> Union[str, Iterator[str]]:
         """Generate text completion using Ollama.
         
         Args:
             prompt: Input prompt for text generation
-            model: Model name to use for generation
+            model: Model name to use for generation (if None, uses configured chat model)
             stream: Whether to stream the response
             **options: Additional generation options (temperature, max_tokens, etc.)
             
         Returns:
             Generated text or iterator for streaming responses
+            
+        Raises:
+            ModelNotFoundError: If the specified model is not found
+            ModelLoadError: If the model fails to load
+            ModelTimeoutError: If the operation times out
         """
+        # Use configured model if not specified
+        model = model or get_model_name("chat")
+        
+        # Verify model exists before attempting to use it
+        self._verify_model_exists(model, "chat")
+        
         data = {
             "model": model,
             "prompt": prompt,
@@ -163,29 +247,55 @@ class OllamaClient:
             **options
         }
         
-        if stream:
-            response_stream = self._make_request("POST", "/api/generate", data, stream=True)
-            return self._extract_streaming_text(response_stream)
-        else:
-            response = self._make_request("POST", "/api/generate", data)
-            return response.get("response", "")
+        try:
+            if stream:
+                response_stream = self._make_request("POST", "/api/generate", data, stream=True)
+                return self._extract_streaming_text(response_stream)
+            else:
+                response = self._make_request("POST", "/api/generate", data)
+                return response.get("response", "")
+                
+        except requests.Timeout:
+            error = ModelTimeoutError(model, "text generation", self.timeout, "chat")
+            log_and_raise_model_error(error, logger)
+        except (OllamaConnectionError, OllamaModelError) as e:
+            if "not found" in str(e).lower():
+                # Model was removed after our check
+                self._cache_model_availability(model, False)
+                available_models = self._get_available_model_names()
+                error = create_model_not_found_error(model, "chat", available_models)
+                log_and_raise_model_error(error, logger)
+            else:
+                error = ModelLoadError(model, "chat", e)
+                log_and_raise_model_error(error, logger)
     
     def chat(self, 
              messages: List[Dict[str, str]], 
-             model: str = "llama3.2",
+             model: Optional[str] = None,
              stream: bool = False,
              **options) -> Union[str, Iterator[str]]:
         """Generate chat completion using Ollama.
         
         Args:
             messages: List of message dictionaries with 'role' and 'content'
-            model: Model name to use for chat
+            model: Model name to use for chat (if None, uses configured chat model)
             stream: Whether to stream the response
             **options: Additional chat options
             
         Returns:
             Generated response or iterator for streaming responses
+            
+        Raises:
+            ModelNotFoundError: If the specified model is not found
+            ModelLoadError: If the model fails to load
+            ModelTimeoutError: If the operation times out
         """
+        # Use configured model if not specified
+        model = model or get_model_name("chat")
+        
+        # Verify model exists before attempting to use it
+        self._verify_model_exists(model, "chat")
+        
         data = {
             "model": model,
             "messages": messages,
@@ -193,38 +303,79 @@ class OllamaClient:
             **options
         }
         
-        if stream:
-            response_stream = self._make_request("POST", "/api/chat", data, stream=True)
-            return self._extract_streaming_chat_text(response_stream)
-        else:
-            response = self._make_request("POST", "/api/chat", data)
-            return response.get("message", {}).get("content", "")
+        try:
+            if stream:
+                response_stream = self._make_request("POST", "/api/chat", data, stream=True)
+                return self._extract_streaming_chat_text(response_stream)
+            else:
+                response = self._make_request("POST", "/api/chat", data)
+                return response.get("message", {}).get("content", "")
+                
+        except requests.Timeout:
+            error = ModelTimeoutError(model, "chat completion", self.timeout, "chat")
+            log_and_raise_model_error(error, logger)
+        except (OllamaConnectionError, OllamaModelError) as e:
+            if "not found" in str(e).lower():
+                # Model was removed after our check
+                self._cache_model_availability(model, False)
+                available_models = self._get_available_model_names()
+                error = create_model_not_found_error(model, "chat", available_models)
+                log_and_raise_model_error(error, logger)
+            else:
+                error = ModelLoadError(model, "chat", e)
+                log_and_raise_model_error(error, logger)
     
     def embed(self, 
               input_text: Union[str, List[str]], 
-              model: str = "mxbai-embed-large") -> Union[List[float], List[List[float]]]:
+              model: Optional[str] = None) -> Union[List[float], List[List[float]]]:
         """Generate embeddings using Ollama.
         
         Args:
             input_text: Text or list of texts to embed
-            model: Embedding model name
+            model: Embedding model name (if None, uses configured embeddings model)
             
         Returns:
             Embedding vector(s)
+            
+        Raises:
+            ModelNotFoundError: If the specified model is not found
+            ModelLoadError: If the model fails to load
+            ModelTimeoutError: If the operation times out
         """
+        # Use configured model if not specified
+        model = model or get_model_name("embeddings")
+        
+        # Verify model exists before attempting to use it
+        self._verify_model_exists(model, "embeddings")
+        
         data = {
             "model": model,
             "input": input_text
         }
         
-        response = self._make_request("POST", "/api/embed", data)
-        embeddings = response.get("embeddings", [])
-        
-        # Return single embedding for single input, list for multiple inputs
-        if isinstance(input_text, str):
-            return embeddings[0] if embeddings else []
-        else:
-            return embeddings
+        try:
+            response = self._make_request("POST", "/api/embed", data)
+            embeddings = response.get("embeddings", [])
+            
+            # Return single embedding for single input, list for multiple inputs
+            if isinstance(input_text, str):
+                return embeddings[0] if embeddings else []
+            else:
+                return embeddings
+                
+        except requests.Timeout:
+            error = ModelTimeoutError(model, "embedding generation", self.timeout, "embeddings")
+            log_and_raise_model_error(error, logger)
+        except (OllamaConnectionError, OllamaModelError) as e:
+            if "not found" in str(e).lower():
+                # Model was removed after our check
+                self._cache_model_availability(model, False)
+                available_models = self._get_available_model_names()
+                error = create_model_not_found_error(model, "embeddings", available_models)
+                log_and_raise_model_error(error, logger)
+            else:
+                error = ModelLoadError(model, "embeddings", e)
+                log_and_raise_model_error(error, logger)
     
     def list_models(self) -> List[Dict[str, Any]]:
         """List available models in Ollama.
@@ -368,4 +519,99 @@ class OllamaClient:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
-        self.close() 
+        self.close()
+    
+    def _normalize_model_name(self, model_name: str) -> str:
+        """Normalize model name by adding :latest tag if missing.
+        
+        Args:
+            model_name: Model name to normalize
+            
+        Returns:
+            Normalized model name with tag
+        """
+        if ':' not in model_name:
+            return f"{model_name}:latest"
+        return model_name
+    
+    def _model_names_match(self, name1: str, name2: str) -> bool:
+        """Check if two model names refer to the same model.
+        
+        Args:
+            name1: First model name
+            name2: Second model name
+            
+        Returns:
+            True if names refer to the same model
+        """
+        # Normalize both names
+        norm1 = self._normalize_model_name(name1)
+        norm2 = self._normalize_model_name(name2)
+        
+        # Direct match
+        if norm1 == norm2:
+            return True
+        
+        # Check if one is the base name of the other
+        base1 = norm1.split(':')[0]
+        base2 = norm2.split(':')[0]
+        
+        if base1 == base2:
+            return True
+        
+        # Check original names too (in case of special formats like hf.co/...)
+        if name1 == name2:
+            return True
+            
+        return False
+
+    def ensure_model_available(self, model_name: str) -> bool:
+        """Ensure a model is available in Ollama, pulling it if necessary.
+        
+        Args:
+            model_name: Name of the model to ensure is available
+            
+        Returns:
+            True if model is available, False if pull failed
+        """
+        try:
+            # Check if model already exists
+            available_models = self.list_models()
+            available_names = [model["name"] for model in available_models]
+            
+            # Check for exact match or normalized match
+            for available_name in available_names:
+                if self._model_names_match(model_name, available_name):
+                    logger.info(f"Model {model_name} already available as {available_name}")
+                    return True
+            
+            # Try to pull the model with normalized name
+            normalized_name = self._normalize_model_name(model_name)
+            logger.info(f"Pulling model {normalized_name} from Ollama...")
+            pull_response = self.pull_model(normalized_name, stream=False)
+            
+            if pull_response.get("status") == "success" or "successfully" in str(pull_response).lower():
+                logger.info(f"Successfully pulled model {normalized_name}")
+                return True
+            else:
+                logger.warning(f"Pull response for {normalized_name}: {pull_response}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to ensure model {model_name} is available: {e}")
+            return False
+    
+    def get_recommended_models(self) -> Dict[str, str]:
+        """Get recommended models for different use cases.
+        
+        Returns:
+            Dictionary mapping model types to recommended model names
+        """
+        config_manager = ConfigManager()
+        return {
+            "chat": config_manager.get_model_name("chat"),
+            "legal_analysis": config_manager.get_model_name("legal_analysis"), 
+            "query_generation": config_manager.get_model_name("query_generation"),
+            "embeddings": config_manager.get_model_name("embeddings"),
+            "fallback": config_manager.get_model_name("fallback")
+        } 

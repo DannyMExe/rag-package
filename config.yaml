@@ -2,11 +2,17 @@ llm:
   backend: ollama
   ollama:
     base_url: http://localhost:11434
-    default_model: law-chat
-    default_embed_model: mxbai-embed-large
     timeout: 30
     max_retries: 3
     retry_delay: 1.0
+
+# Model configuration for different use cases
+models:
+  chat: llama3.2:latest
+  legal_analysis: law-chat:latest
+  query_generation: llama3.2:latest
+  embeddings: mxbai-embed-large:latest
+  fallback: llama3.2:latest
 
 api:
   host: 127.0.0.1

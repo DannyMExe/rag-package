@@ -9,6 +9,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
+import re
 
 from .llm_backend import (
     LLMFactory, 
@@ -16,6 +17,12 @@ from .llm_backend import (
     LLMBackend,
     BackendNotAvailableError,
     LLMBackendError
+)
+from ..utils.config import get_model_name
+from .exceptions import (
+    ModelNotFoundError, ModelLoadError, ModelTimeoutError,
+    BackendNotAvailableError as CustomBackendNotAvailableError,
+    log_and_raise_model_error
 )
 
 logger = logging.getLogger(__name__)
@@ -28,8 +35,8 @@ class AIEngine:
                  backend_type: str = "auto",
                  model_path: Optional[str] = None,
                  base_url: Optional[str] = None,
-                 default_model: str = "llama3.2",
-                 default_embed_model: str = "mxbai-embed-large",
+                 default_model: Optional[str] = None,
+                 default_embed_model: Optional[str] = None,
                  **backend_kwargs):
         """Initialize the AI engine with the specified backend.
         
@@ -37,15 +44,18 @@ class AIEngine:
             backend_type: Backend type ("ollama", "llama-cpp", or "auto")
             model_path: Path to GGUF model file (for llama-cpp backend)
             base_url: Ollama server URL (for Ollama backend)
-            default_model: Default model for text generation
-            default_embed_model: Default model for embeddings
+            default_model: Default model for text generation (if None, uses config)
+            default_embed_model: Default model for embeddings (if None, uses config)
             **backend_kwargs: Additional backend-specific parameters
         """
         self.backend_type = backend_type
         self.model_path = model_path
         self.base_url = base_url
-        self.default_model = default_model
-        self.default_embed_model = default_embed_model
+        
+        # Use configured models if not explicitly provided
+        self.default_model = default_model or get_model_name("chat")
+        self.default_embed_model = default_embed_model or get_model_name("embeddings")
+        
         self.backend_kwargs = backend_kwargs
         
         self.llm_context = None
@@ -55,6 +65,70 @@ class AIEngine:
         self.model = None
         self.model_kwargs = backend_kwargs
         
+    def _find_downloaded_model(self, model_type: str = "chat") -> Optional[str]:
+        """Find an available model in Ollama for the specified model type.
+        
+        Args:
+            model_type: Type of model to find (chat, legal_analysis, etc.)
+            
+        Returns:
+            Model name if available in Ollama, or None if not found
+        """
+        try:
+            from .ollama_client import OllamaClient
+            client = OllamaClient(base_url=self.base_url)
+            
+            if not client.is_available():
+                logger.debug("Ollama server not available")
+                return None
+            
+            # Get the configured model name for this type
+            configured_model = get_model_name(model_type)
+            
+            # Get list of available models in Ollama
+            available_models = client.list_models()
+            model_names = [model["name"] for model in available_models]
+            
+            # Check if the configured model is available
+            if configured_model in model_names:
+                logger.info(f"Found configured model for {model_type}: {configured_model}")
+                return configured_model
+            
+            # Look for alternative models based on type
+            if model_type == "legal_analysis":
+                # Look for legal-specific models
+                for model_name in model_names:
+                    if any(keyword in model_name.lower() for keyword in ["law", "legal", "lawyer"]):
+                        logger.info(f"Found legal model for {model_type}: {model_name}")
+                        return model_name
+            
+            # Look for general models using configuration system
+            # Try other configured model types as fallbacks
+            fallback_types = ["chat", "query_generation", "fallback"]
+            for fallback_type in fallback_types:
+                if fallback_type != model_type:  # Don't try the same type again
+                    try:
+                        fallback_model = get_model_name(fallback_type)
+                        if fallback_model in model_names:
+                            logger.info(f"Found fallback model for {model_type}: {fallback_model} (from {fallback_type})")
+                            return fallback_model
+                    except Exception:
+                        continue
+            
+            # Last resort: look for common model patterns in available models
+            common_patterns = ["llama", "mistral", "phi", "qwen", "gemma"]
+            for pattern in common_patterns:
+                for model_name in model_names:
+                    if pattern in model_name.lower():
+                        logger.info(f"Found pattern-matched model for {model_type}: {model_name}")
+                        return model_name
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Error finding available model: {e}")
+            return None
+
     def _determine_backend_type(self) -> str:
         """Determine the best backend type to use.
         
@@ -67,8 +141,8 @@ class AIEngine:
         # Auto-detection logic
         available_backends = LLMFactory.get_available_backends()
         
-        # Prefer Ollama if available and no model path specified
-        if "ollama" in available_backends and not self.model_path:
+        # Prefer Ollama if available
+        if "ollama" in available_backends:
             # Check if Ollama server is running
             try:
                 from .ollama_client import OllamaClient
@@ -78,9 +152,13 @@ class AIEngine:
             except Exception:
                 pass
         
-        # Fall back to llama-cpp if model path is provided
+        # Only fall back to llama-cpp if explicitly provided a model path
         if "llama-cpp" in available_backends and self.model_path:
             return "llama-cpp"
+        
+        # Default to Ollama even if server isn't running (user can start it)
+        if "ollama" in available_backends:
+            return "ollama"
         
         # Default to first available backend
         if available_backends:
@@ -152,6 +230,35 @@ class AIEngine:
             self.is_loaded = False
             return False
     
+    def _try_fallback_model(self, operation: str, model_type: str, original_error: Exception) -> Optional[str]:
+        """Try to use a fallback model when the primary model fails.
+        
+        Args:
+            operation: Description of the operation that failed
+            model_type: Type of model that failed
+            original_error: The original error that occurred
+            
+        Returns:
+            Fallback model name if available, None otherwise
+        """
+        try:
+            fallback_model = get_model_name("fallback")
+            
+            # Don't use the same model as fallback
+            primary_model = get_model_name(model_type)
+            if fallback_model == primary_model:
+                logger.warning(f"Fallback model is the same as primary model for {model_type}, no fallback available")
+                return None
+            
+            logger.warning(f"Primary {model_type} model failed for {operation}, trying fallback model: {fallback_model}")
+            logger.debug(f"Original error: {original_error}")
+            
+            return fallback_model
+            
+        except Exception as e:
+            logger.error(f"Failed to get fallback model: {e}")
+            return None
+
     def generate_response(self, 
                          prompt: str, 
                          max_tokens: int = 1000, 
@@ -172,9 +279,15 @@ class AIEngine:
             
         Raises:
             RuntimeError: If model is not loaded.
+            ModelNotFoundError: If the specified model is not found.
+            ModelLoadError: If the model fails to load.
         """
         if not self.is_loaded or not self.llm_context:
             raise RuntimeError("Model is not loaded. Call load_model() first.")
+        
+        # Use default model if none specified
+        if model is None:
+            model = self.default_model
         
         try:
             response = self.llm_context.generate(
@@ -195,12 +308,38 @@ class AIEngine:
             # Clean up response
             return self._clean_response(response_text)
             
+        except (ModelNotFoundError, ModelLoadError, ModelTimeoutError) as e:
+            # Try fallback model for model-specific errors
+            fallback_model = self._try_fallback_model("text generation", "chat", e)
+            if fallback_model and fallback_model != model:
+                try:
+                    logger.info(f"Retrying text generation with fallback model: {fallback_model}")
+                    response = self.llm_context.generate(
+                        prompt=prompt,
+                        model=fallback_model,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        **kwargs
+                    )
+                    
+                    # Handle streaming responses
+                    if hasattr(response, '__iter__') and not isinstance(response, str):
+                        response_text = "".join(response)
+                    else:
+                        response_text = str(response)
+                    
+                    return self._clean_response(response_text)
+                    
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    # Raise the original error, not the fallback error
+                    log_and_raise_model_error(e, logger)
+            else:
+                log_and_raise_model_error(e, logger)
+                
         except (BackendNotAvailableError, LLMBackendError) as e:
             logger.error(f"Error generating response: {e}")
             raise RuntimeError(f"Generation failed: {e}") from e
-        except Exception as e:
-            logger.error(f"Unexpected error generating response: {e}")
-            raise
     
     def generate_chat_response(self, 
                               messages: List[Dict[str, str]], 
@@ -281,6 +420,10 @@ class AIEngine:
             
         Returns:
             Analysis result.
+            
+        Raises:
+            ModelNotFoundError: If the legal analysis model is not found.
+            ModelLoadError: If the model fails to load.
         """
         if analysis_type == "summary":
             prompt = self._create_summary_prompt(text)
@@ -290,8 +433,28 @@ class AIEngine:
             prompt = self._create_legal_issues_prompt(text)
         else:
             raise ValueError(f"Unknown analysis type: {analysis_type}")
-            
-        return self.generate_response(prompt, max_tokens=1500, temperature=0.3)
+        
+        # Use legal_analysis model for document analysis
+        legal_model = get_model_name("legal_analysis")
+        
+        # Convert to chat format for better model performance
+        messages = [
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ]
+        
+        try:
+            return self.generate_chat_response(messages, model=legal_model, max_tokens=1500, temperature=0.3)
+        except (ModelNotFoundError, ModelLoadError, ModelTimeoutError) as e:
+            # Try fallback for legal analysis
+            fallback_model = self._try_fallback_model("document analysis", "legal_analysis", e)
+            if fallback_model and fallback_model != legal_model:
+                logger.info(f"Retrying document analysis with fallback model: {fallback_model}")
+                return self.generate_chat_response(messages, model=fallback_model, max_tokens=1500, temperature=0.3)
+            else:
+                log_and_raise_model_error(e, logger)
         
     def generate_search_query(self, text: str, database: str = "westlaw") -> str:
         """Generate a search query for legal databases.
@@ -302,9 +465,39 @@ class AIEngine:
             
         Returns:
             Generated search query.
+            
+        Raises:
+            ModelNotFoundError: If the query generation model is not found.
+            ModelLoadError: If the model fails to load.
         """
         prompt = self._create_search_query_prompt(text, database)
-        return self.generate_response(prompt, max_tokens=200, temperature=0.2)
+        
+        # DEBUG: Log the actual prompt being sent
+        logger.info(f"=== SEARCH QUERY GENERATION DEBUG ===")
+        logger.info(f"Database: {database}")
+        logger.info(f"Text length: {len(text)} characters")
+        logger.info(f"Prompt being sent:\n{prompt}")
+        logger.info(f"=== END DEBUG ===")
+        
+        # Use query_generation model for search query generation
+        query_model = get_model_name("query_generation")
+        logger.info(f"Using query model: {query_model}")
+        
+        # TEMPORARY: Try raw generation instead of chat format
+        try:
+            response = self.generate_response(prompt, model=query_model, max_tokens=200, temperature=0.2)
+            logger.info(f"Raw AI response: {repr(response)}")
+            return response
+        except (ModelNotFoundError, ModelLoadError, ModelTimeoutError) as e:
+            # Try fallback for query generation
+            fallback_model = self._try_fallback_model("search query generation", "query_generation", e)
+            if fallback_model and fallback_model != query_model:
+                logger.info(f"Retrying search query generation with fallback model: {fallback_model}")
+                response = self.generate_response(prompt, model=fallback_model, max_tokens=200, temperature=0.2)
+                logger.info(f"Raw AI fallback response: {repr(response)}")
+                return response
+            else:
+                log_and_raise_model_error(e, logger)
     
     def list_models(self) -> List[str]:
         """List available models.
@@ -397,7 +590,7 @@ Legal Issues and Areas of Law:"""
     def _create_search_query_prompt(self, text: str, database: str) -> str:
         """Create a prompt for generating search queries."""
         if database == "westlaw":
-            return f"""You are a legal research expert. Create a Westlaw search query using Terms and Connectors syntax.
+            return f"""You are a legal research expert. Your task is to create a Westlaw database search query using Terms and Connectors syntax based on the document excerpt provided below.
 
 WESTLAW SYNTAX RULES:
 - Use & for AND (required terms)
@@ -410,55 +603,162 @@ WESTLAW SYNTAX RULES:
 - Put phrases in quotes: "personal injury"
 - Use parentheses for grouping: (contract | agreement) & breach
 
-REALISTIC WESTLAW EXAMPLES:
+EXCELLENT WESTLAW EXAMPLES:
 - negligen! /p "motor vehicle" /s injur! & damag!
-- (contract | agreement) /s breach /p (remedy | damag!)
-- "personal injury" /p automobile /s insurance /3 claim!
+- (contract | agreement) /s breach /p (remedy | damag! | restitution)
+- "personal injury" /p automobile /s insurance /3 (claim! | coverage)
 - liabil! /s (product! | manufactur!) & defect! /p injur!
+- "medical malpractice" /p (hospital | physician | doctor) /s "standard of care"
+- employment /3 discriminat! /p (title | "civil rights") & damag!
+- (tort! | negligen!) /s "proximate cause" /p foresee!
+- "breach of contract" /s (anticipat! | expect!) /p damag!
+
+AVOID including:
+- Specific dates, times, or years unless legally relevant
+- Personal names of individuals (except in case citations)
+- Specific hospital names, company names, or addresses
+- Medical record numbers, case numbers, or file references
+- Irrelevant procedural details
+- Focus on LEGAL CONCEPTS and CAUSES OF ACTION
+
+IMPORTANT: Output only the Westlaw database search query - no explanations, no additional text.
 
 Document excerpt:
-{text[:2000]}
-
-Create a precise Westlaw Terms and Connectors query using proximity operators and truncation (respond with ONLY the query, no explanations):"""
+{text[:2000]}"""
         
-        elif database == "lexisnexis":
-            return f"""Create a LexisNexis search query using boolean operators AND, OR, NOT.
+        elif database == "lexisnexis" or database == "lexis":
+            return f"""You are a legal research expert. Your task is to create a LexisNexis database search query using boolean operators based on the document excerpt provided below.
+
+LEXISNEXIS SYNTAX RULES:
+- Use AND for required terms
+- Use OR for alternative terms
+- Use NOT to exclude terms
+- Use W/n for within n words (e.g., W/3 for within 3 words)
+- Use PRE/n for term A preceding term B within n words
+- Use quotes for exact phrases: "personal injury"
+- Use parentheses for grouping: (contract OR agreement) AND breach
+
+EXCELLENT LEXISNEXIS EXAMPLES:
+- negligence AND "motor vehicle" AND injury AND damages
+- (contract OR agreement) AND breach AND (remedy OR damages OR restitution)
+- "personal injury" AND automobile AND insurance AND (claim OR coverage)
+- liability AND (product OR manufacturer) AND defect AND injury
+- "medical malpractice" AND (hospital OR physician) AND "standard of care"
+- employment AND discrimination AND ("title vii" OR "civil rights") AND damages
+- (tort OR negligence) AND "proximate cause" AND foreseeability
+- "breach of contract" AND (anticipatory OR expectation) AND damages
+
+AVOID including:
+- Specific dates, times, or years unless legally relevant
+- Personal names of individuals (except in case citations)
+- Specific hospital names, company names, or addresses
+- Medical record numbers, case numbers, or file references
+- Irrelevant procedural details
+- Focus on LEGAL CONCEPTS and CAUSES OF ACTION
+
+IMPORTANT: Output only the LexisNexis database search query - no explanations, no additional text.
 
 Document excerpt:
-{text[:2000]}
-
-Generate a precise LexisNexis query (respond with ONLY the query):"""
+{text[:2000]}"""
         
-        else:  # casetext or other
-            return f"""Create a search query for {database} using natural language and boolean operators.
+        elif database == "bloomberg":
+            return f"""You are a legal research expert. Your task is to create a Bloomberg Law database search query using their advanced syntax based on the document excerpt provided below.
+
+BLOOMBERG LAW SYNTAX RULES:
+- Use AND for required terms
+- Use OR for alternative terms
+- Use NOT to exclude terms
+- Use NEAR/n for proximity (e.g., NEAR/5 for within 5 words)
+- Use quotes for exact phrases: "personal injury"
+- Use parentheses for grouping: (contract OR agreement) AND breach
+- Use field searches: title:(contract breach) or headnotes:(negligence)
+
+EXCELLENT BLOOMBERG LAW EXAMPLES:
+- negligence AND "motor vehicle" AND injury AND damages
+- (contract OR agreement) AND breach AND (remedy OR damages)
+- "personal injury" AND automobile AND insurance NEAR/3 claim
+- liability AND (product OR manufacturer) AND defect AND injury
+- "medical malpractice" AND physician AND "standard of care"
+- employment AND discrimination AND "title vii" AND damages
+- tort AND "proximate cause" AND foreseeability
+- "breach of contract" AND expectation AND damages
+- headnotes:(negligence AND "duty of care" AND breach)
+
+AVOID including:
+- Specific dates, times, or years unless legally relevant
+- Personal names of individuals (except in case citations)
+- Specific hospital names, company names, or addresses
+- Medical record numbers, case numbers, or file references
+- Irrelevant procedural details
+- Focus on LEGAL CONCEPTS and CAUSES OF ACTION
+
+IMPORTANT: Output only the Bloomberg Law database search query - no explanations, no additional text.
 
 Document excerpt:
-{text[:2000]}
+{text[:2000]}"""
+        
+        else:  # casetext, fastcase, or other
+            return f"""You are a legal research expert. Your task is to create a database search query for {database} using natural language and boolean operators based on the document excerpt provided below.
 
-Generate a precise search query (respond with ONLY the query):"""
+GENERAL LEGAL DATABASE SYNTAX:
+- Use AND for required terms
+- Use OR for alternative terms
+- Use NOT to exclude terms
+- Use quotes for exact phrases: "personal injury"
+- Use parentheses for grouping: (contract OR agreement) AND breach
+
+EXCELLENT EXAMPLES:
+- negligence AND "motor vehicle" AND injury AND damages
+- (contract OR agreement) AND breach AND remedy
+- "personal injury" AND automobile AND insurance
+- liability AND product AND defect AND injury
+- "medical malpractice" AND physician AND "standard of care"
+- employment AND discrimination AND damages
+- tort AND "proximate cause"
+- "breach of contract" AND damages
+
+AVOID including:
+- Specific dates, times, or years unless legally relevant
+- Personal names of individuals (except in case citations)
+- Specific hospital names, company names, or addresses
+- Medical record numbers, case numbers, or file references
+- Irrelevant procedural details
+- Focus on LEGAL CONCEPTS and CAUSES OF ACTION
+
+IMPORTANT: Output only the {database} database search query - no explanations, no additional text.
+
+Document excerpt:
+{text[:2000]}"""
 
     def _clean_response(self, text: str) -> str:
-        """Clean up model response by removing chat format artifacts.
+        """Clean and format the response text."""
+        if not text:
+            return ""
         
-        Args:
-            text: Raw model response text.
-            
-        Returns:
-            Cleaned response text.
-        """
-        # Remove common chat format tags
-        text = text.replace("[/INST]", "").replace("[INST]", "")
-        text = text.replace("<s>", "").replace("</s>", "")
-        text = text.replace("Assistant:", "").replace("Human:", "")
+        # TEMPORARILY DISABLED FOR TESTING - return raw response
+        return text.strip()
         
-        # Remove leading/trailing whitespace and newlines
-        text = text.strip()
+        # # Remove common chat format artifacts
+        # text = text.replace("[/INST]", "").replace("[INST]", "")
+        # text = text.replace("<s>", "").replace("</s>", "")
+        # text = text.replace("[/type]", "")  # Remove [/type] artifacts
+        # text = text.replace("[/]", "")  # Remove [/] artifacts
         
-        # Remove any leading colons or dashes that might be artifacts
-        while text.startswith(":") or text.startswith("-") or text.startswith("*"):
-            text = text[1:].strip()
-            
-        return text
+        # # Remove prompt echoes more comprehensively
+        # text = re.sub(r'^.*?based on the document excerpt.*?database search query.*?\.\s*', '', text, flags=re.IGNORECASE | re.DOTALL)
+        # text = re.sub(r'^.*?create a.*?database.*?query.*?\.\s*', '', text, flags=re.IGNORECASE | re.DOTALL)
+        # text = re.sub(r'^.*?output only the.*?database.*?query.*?\.\s*', '', text, flags=re.IGNORECASE | re.DOTALL)
+        # text = re.sub(r'^Please provide the.*?search query.*?\.\s*', '', text, flags=re.IGNORECASE)
+        # text = re.sub(r'^Based on this document.*?\?\s*', '', text, flags=re.IGNORECASE)
+        
+        # # Clean leading/trailing whitespace and quotes
+        # text = text.strip()
+        
+        # # If the response is wrapped in quotes, clean them up
+        # if text.startswith('"') and text.endswith('"'):
+        #     text = text[1:-1].strip()
+        
+        # return text
 
     def unload_model(self) -> None:
         """Unload the model to free memory."""
@@ -500,8 +800,8 @@ def create_ai_engine_from_config(config: Dict[str, Any]) -> AIEngine:
         ollama_config = llm_config.get("ollama", {})
         backend_config.update({
             "base_url": ollama_config.get("base_url"),
-            "default_model": ollama_config.get("default_model", "llama3.2"),
-            "default_embed_model": ollama_config.get("default_embed_model", "mxbai-embed-large"),
+            "default_model": ollama_config.get("default_model", get_model_name("chat")),
+            "default_embed_model": ollama_config.get("default_embed_model", get_model_name("embeddings")),
             "timeout": ollama_config.get("timeout", 30),
             "max_retries": ollama_config.get("max_retries", 3),
             "retry_delay": ollama_config.get("retry_delay", 1.0)

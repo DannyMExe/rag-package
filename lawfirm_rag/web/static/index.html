@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LawFirm-RAG - Legal Document Analysis</title>
-    <link rel="stylesheet" href="/assets/styles.css">
+    
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
     <div id="app">
@@ -161,45 +164,8 @@
                     <div class="available-models-section">
                         <h3>Available Models</h3>
                         <div class="model-grid">
-                            <!-- Law Chat Model -->
-                            <div class="model-card">
-                                <div class="model-header">
-                                    <h4>Law Chat GGUF</h4>
-                                    <span class="model-badge recommended">Recommended</span>
-                                </div>
-                                <div class="model-info">
-                                    <p><strong>Size:</strong> 3.83 GB (Q4_0 quantization)</p>
-                                    <p><strong>Type:</strong> Legal domain-specific LLaMA-2-Chat-7B</p>
-                                    <p><strong>Description:</strong> Specialized for legal document analysis and query generation</p>
-                                    <p><strong>Source:</strong> <a href="https://huggingface.co/TheBloke/law-chat-GGUF" target="_blank">Hugging Face</a></p>
-                                </div>
-                                <div class="model-actions">
-                                    <button class="btn btn-success" onclick="app.loadModel('law-chat-q4_0')" id="load-law-chat-q4_0" style="display: none;">
-                                        <i class="fas fa-play"></i>
-                                        Load Model
-                                    </button>
-                                    <button class="btn btn-primary" onclick="app.downloadModel('law-chat-q4_0')" id="download-law-chat-q4_0">
-                                        <i class="fas fa-download"></i>
-                                        Download Q4_0
-                                    </button>
-                                    <button class="btn btn-secondary" onclick="app.showModelVariants('law-chat')">
-                                        <i class="fas fa-list"></i>
-                                        Other Sizes
-                                    </button>
-                                </div>
-                                <div class="download-progress" id="law-chat-progress" style="display: none;">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill"></div>
-                                    </div>
-                                    <div class="progress-info">
-                                        <span class="progress-text">0%</span>
-                                        <button class="btn btn-sm btn-danger" onclick="app.cancelDownload()" title="Cancel Download">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
+                            <!-- Dynamic model cards will be inserted here -->
+                            
                             <!-- Placeholder for future models -->
                             <div class="model-card coming-soon">
                                 <div class="model-header">
@@ -238,7 +204,7 @@
                                 <span class="variant-name">Q4_0</span>
                                 <span class="variant-size">3.83 GB</span>
                                 <span class="variant-quality">Recommended balance</span>
-                                <button class="btn btn-sm btn-primary" onclick="app.downloadModel('law-chat-q4_0')">Download</button>
+                                <button class="btn btn-sm btn-primary" onclick="app.downloadModel('law-chat:latest')">Download</button>
                             </div>
                             <div class="variant-item">
                                 <span class="variant-name">Q5_0</span>
@@ -270,6 +236,14 @@
         <div id="toast-container" class="toast-container"></div>
     </div>
 
+    <!-- Load modules first -->
+    <script src="/assets/modules/UIManager.js"></script>
+    <script src="/assets/modules/ApiClient.js"></script>
+    <script src="/assets/modules/ModelManager.js"></script>
+    <script src="/assets/modules/FileHandler.js"></script>
+    <script src="/assets/modules/DocumentAnalyzer.js"></script>
+    
+    <!-- Main application -->
     <script src="/assets/app.js"></script>
 </body>
 </html> 

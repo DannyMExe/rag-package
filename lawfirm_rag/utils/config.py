@@ -12,6 +12,24 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Model type definitions for consistent naming
+MODEL_TYPES = {
+    "chat": "General chat and conversation",
+    "legal_analysis": "Legal document analysis and summarization", 
+    "query_generation": "Search query generation for legal databases",
+    "embeddings": "Text embeddings for semantic search",
+    "fallback": "Fallback model when primary models fail"
+}
+
+# Default model mappings for different types of operations
+DEFAULT_MODELS = {
+    "chat": "law-chat:latest",
+    "legal_analysis": "law-chat:latest", 
+    "query_generation": "law-chat:latest",
+    "embeddings": "mxbai-embed-large:latest",
+    "fallback": "law-chat:latest"
+}
+
 
 class ConfigManager:
     """Manages configuration settings for LawFirm-RAG."""
@@ -85,8 +103,8 @@ class ConfigManager:
                 "backend": "ollama",  # Force Ollama instead of auto-detection
                 "ollama": {
                     "base_url": "http://localhost:11434",
-                    "default_model": "law-chat",
-                    "default_embed_model": "mxbai-embed-large",
+                    "default_model": DEFAULT_MODELS["chat"],
+                    "default_embed_model": DEFAULT_MODELS["embeddings"],
                     "timeout": 30,
                     "max_retries": 3,
                     "retry_delay": 1.0
@@ -100,6 +118,8 @@ class ConfigManager:
                     "max_tokens": 1000
                 }
             },
+            # Model configuration for different use cases
+            "models": DEFAULT_MODELS.copy(),
             # Legacy model section for backward compatibility
             "model": {
                 "path": "~/.lawfirm-rag/models/default.gguf",
@@ -342,3 +362,134 @@ class ConfigManager:
             return True
         
         return False 
+
+    def get_model_name(self, model_type: str) -> str:
+        """Get the configured model name for a specific model type.
+        
+        Args:
+            model_type: Type of model (e.g., 'chat', 'legal_analysis', 'embeddings')
+            
+        Returns:
+            Configured model name or default if not found
+            
+        Raises:
+            ValueError: If model_type is not recognized
+        """
+        if model_type not in MODEL_TYPES:
+            raise ValueError(f"Unknown model type: {model_type}. Valid types: {list(MODEL_TYPES.keys())}")
+        
+        # First, try to get the currently active/loaded model
+        active_model_name = self._get_active_model_name()
+        if active_model_name and model_type in ["chat", "legal_analysis", "query_generation"]:
+            # Use active model for text generation tasks
+            logger.debug(f"Using active model {active_model_name} for {model_type}")
+            return active_model_name
+        
+        # Get from user configuration, fall back to default
+        return self.get_option(f"models.{model_type}", DEFAULT_MODELS.get(model_type))
+    
+    def _get_active_model_name(self) -> Optional[str]:
+        """Get the name of the currently active model from the model manager.
+        
+        Returns:
+            Name of the active model, or None if no model is active
+        """
+        try:
+            # Import here to avoid circular imports
+            from ..api import fastapi_app
+            
+            # Access the global model manager instance from the FastAPI app
+            status = fastapi_app.model_manager.get_status()
+            return status.get("active_model")
+        except Exception as e:
+            logger.debug(f"Could not get active model: {e}")
+            return None
+    
+    def set_model_name(self, model_type: str, model_name: str) -> None:
+        """Set the model name for a specific model type.
+        
+        Args:
+            model_type: Type of model (e.g., 'chat', 'legal_analysis', 'embeddings')
+            model_name: Name of the model to use
+            
+        Raises:
+            ValueError: If model_type is not recognized
+        """
+        if model_type not in MODEL_TYPES:
+            raise ValueError(f"Unknown model type: {model_type}. Valid types: {list(MODEL_TYPES.keys())}")
+        
+        self.set_option(f"models.{model_type}", model_name)
+        logger.info(f"Set {model_type} model to: {model_name}")
+    
+    def get_all_model_names(self) -> Dict[str, str]:
+        """Get all configured model names.
+        
+        Returns:
+            Dictionary mapping model types to model names
+        """
+        return {model_type: self.get_model_name(model_type) for model_type in MODEL_TYPES.keys()}
+    
+    def get_model_types(self) -> Dict[str, str]:
+        """Get available model types and their descriptions.
+        
+        Returns:
+            Dictionary mapping model types to descriptions
+        """
+        return MODEL_TYPES.copy()
+    
+    def reset_model_to_default(self, model_type: str) -> None:
+        """Reset a model type to its default value.
+        
+        Args:
+            model_type: Type of model to reset
+            
+        Raises:
+            ValueError: If model_type is not recognized
+        """
+        if model_type not in MODEL_TYPES:
+            raise ValueError(f"Unknown model type: {model_type}. Valid types: {list(MODEL_TYPES.keys())}")
+        
+        default_model = DEFAULT_MODELS.get(model_type)
+        self.set_model_name(model_type, default_model)
+        logger.info(f"Reset {model_type} model to default: {default_model}")
+    
+    def reset_all_models_to_defaults(self) -> None:
+        """Reset all model types to their default values."""
+        for model_type in MODEL_TYPES.keys():
+            self.reset_model_to_default(model_type)
+        logger.info("Reset all models to defaults")
+
+
+# Global config manager instance
+_config_manager = None
+
+def get_config_manager() -> ConfigManager:
+    """Get the global configuration manager instance.
+    
+    Returns:
+        ConfigManager instance
+    """
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager
+
+def get_model_name(model_type: str) -> str:
+    """Convenience function to get a model name from global config.
+    
+    Args:
+        model_type: Type of model (e.g., 'chat', 'legal_analysis', 'embeddings')
+        
+    Returns:
+        Configured model name
+    """
+    return get_config_manager().get_model_name(model_type)
+
+def set_model_name(model_type: str, model_name: str) -> None:
+    """Convenience function to set a model name in global config.
+    
+    Args:
+        model_type: Type of model
+        model_name: Name of the model to use
+    """
+    get_config_manager().set_model_name(model_type, model_name) 

@@ -1,379 +1,319 @@
 """
-Model Downloader for Hugging Face GGUF Models
+Model downloader for LawFirm-RAG.
 
-This module provides functionality to download AI models from Hugging Face,
-specifically designed for GGUF format models used in legal document analysis.
+Simplified to work with Ollama's native model management.
 """
 
-import os
-import hashlib
 import logging
-import requests
-from pathlib import Path
-from typing import Optional, Dict, Generator, Tuple
-from urllib.parse import urlparse
-import time
+from typing import Dict, List, Optional
+from .ollama_client import OllamaClient
 
 logger = logging.getLogger(__name__)
 
 
-class ModelDownloadError(Exception):
-    """Custom exception for model download errors"""
-    pass
-
-
 class ModelDownloader:
-    """
-    Handles downloading and managing AI models from Hugging Face.
+    """Manages model downloading and availability through Ollama."""
     
-    Supports downloading GGUF models with progress tracking, validation,
-    and proper error handling.
-    """
-    
-    # Hugging Face model repository and supported variants
-    HF_REPO = "TheBloke/law-chat-GGUF"
-    SUPPORTED_VARIANTS = {
-        "law-chat-q2_k": "law-chat.Q2_K.gguf",
-        "law-chat-q3_k_m": "law-chat.Q3_K_M.gguf", 
-        "law-chat-q4_0": "law-chat.Q4_0.gguf",
-        "law-chat-q5_0": "law-chat.Q5_0.gguf",
-        "law-chat-q8_0": "law-chat.Q8_0.gguf"
-    }
-    
-    # Expected file sizes (in bytes) for validation
-    EXPECTED_SIZES = {
-        "law-chat-q2_k": 2_830_000_000,    # ~2.83 GB
-        "law-chat-q3_k_m": 3_300_000_000,  # ~3.30 GB
-        "law-chat-q4_0": 3_830_000_000,    # ~3.83 GB
-        "law-chat-q5_0": 4_650_000_000,    # ~4.65 GB
-        "law-chat-q8_0": 7_160_000_000     # ~7.16 GB
-    }
-    
-    def __init__(self, storage_dir: Optional[str] = None):
-        """
-        Initialize the ModelDownloader.
+    def __init__(self, base_url: Optional[str] = None):
+        """Initialize the model downloader.
         
         Args:
-            storage_dir: Directory to store downloaded models. 
-                        Defaults to ./models/downloaded/
+            base_url: Ollama server URL (optional, defaults to http://localhost:11434)
         """
-        if storage_dir is None:
-            storage_dir = Path(__file__).parent.parent / "models" / "downloaded"
+        # Only pass base_url if it's actually provided and looks like a URL
+        if base_url and base_url.startswith(('http://', 'https://')):
+            self.ollama_client = OllamaClient(base_url=base_url)
+        else:
+            self.ollama_client = OllamaClient()  # Use default URL
         
-        self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Track current download progress
+        # Track download state
         self._current_download = {
             "model_variant": None,
-            "progress": 0.0,
             "status": "idle",
-            "error": None,
-            "total_size": 0,
+            "progress": 0.0,
+            "error": None
+        }
+        
+        # Recommended models for different use cases
+        self.recommended_models = {
+            "chat": {
+                "name": "llama3.2:latest",
+                "description": "General purpose chat model",
+                "size": "2.0GB",
+                "use_case": "General conversation and text generation"
+            },
+            "legal_analysis": {
+                "name": "law-chat:latest",
+                "description": "Legal-specific chat model",
+                "size": "3.8GB", 
+                "use_case": "Legal document analysis and legal Q&A"
+            },
+            "query_generation": {
+                "name": "llama3.2:latest",
+                "description": "Query generation model",
+                "size": "2.0GB",
+                "use_case": "Generating search queries for legal databases"
+            },
+            "embeddings": {
+                "name": "mxbai-embed-large:latest",
+                "description": "Text embedding model",
+                "size": "669MB",
+                "use_case": "Document similarity and semantic search"
+            },
+            "fallback": {
+                "name": "llama3.2:latest",
+                "description": "Fallback model",
+                "size": "2.0GB",
+                "use_case": "Backup model when primary models fail"
+            }
+        }
+    
+    def list_available_models(self) -> Dict[str, Dict]:
+        """List all available models with their status.
+        
+        Returns:
+            Dictionary mapping model names to their information and status
+        """
+        result = {}
+        
+        try:
+            if not self.ollama_client.is_available():
+                logger.warning("Ollama server not available")
+                # Return recommended models with downloaded=False
+                for model_type, info in self.recommended_models.items():
+                    result[info["name"]] = {
+                        **info,
+                        "type": model_type,
+                        "downloaded": False,
+                        "available": False
+                    }
+                return result
+            
+            # Get models currently available in Ollama
+            ollama_models = self.ollama_client.list_models()
+            available_model_names = [model["name"] for model in ollama_models]
+            
+            # Add recommended models with their status
+            for model_type, info in self.recommended_models.items():
+                model_name = info["name"]
+                is_available = model_name in available_model_names
+                
+                result[model_name] = {
+                    **info,
+                    "type": model_type,
+                    "downloaded": is_available,
+                    "available": is_available
+                }
+            
+            # Add any other models found in Ollama that aren't in our recommended list
+            for model in ollama_models:
+                model_name = model["name"]
+                if model_name not in result:
+                    result[model_name] = {
+                        "name": model_name,
+                        "description": "Available in Ollama",
+                        "size": model.get("size", "Unknown"),
+                        "use_case": "General purpose",
+                        "type": "other",
+                        "downloaded": True,
+                        "available": True
+                    }
+        
+        except Exception as e:
+            logger.error(f"Error listing available models: {e}")
+        
+        return result
+    
+    def download_model(self, model_name: str) -> bool:
+        """Download a model using Ollama.
+        
+        Args:
+            model_name: Name of the model to download
+            
+        Returns:
+            True if download successful, False otherwise
+        """
+        try:
+            if not self.ollama_client.is_available():
+                logger.error("Ollama server not available. Please start Ollama first.")
+                self._current_download["error"] = "Ollama server not available"
+                return False
+            
+            # Update download state
+            self._current_download.update({
+                "model_variant": model_name,
+                "status": "downloading",
+                "progress": 0.0,
+                "error": None
+            })
+            
+            logger.info(f"Downloading model: {model_name}")
+            success = self.ollama_client.ensure_model_available(model_name)
+            
+            # Update final state
+            if success:
+                self._current_download.update({
+                    "status": "completed",
+                    "progress": 100.0
+                })
+            else:
+                self._current_download.update({
+                    "status": "failed",
+                    "error": "Download failed"
+                })
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error downloading model {model_name}: {e}")
+            self._current_download.update({
+                "status": "failed",
+                "error": str(e)
+            })
+            return False
+    
+    def download_recommended_models(self, model_types: Optional[List[str]] = None) -> Dict[str, bool]:
+        """Download recommended models for specified types.
+        
+        Args:
+            model_types: List of model types to download (None for all)
+            
+        Returns:
+            Dictionary mapping model types to download success status
+        """
+        if model_types is None:
+            model_types = list(self.recommended_models.keys())
+        
+        results = {}
+        
+        for model_type in model_types:
+            if model_type not in self.recommended_models:
+                logger.warning(f"Unknown model type: {model_type}")
+                results[model_type] = False
+                continue
+            
+            model_name = self.recommended_models[model_type]["name"]
+            success = self.download_model(model_name)
+            results[model_type] = success
+            
+            if success:
+                logger.info(f"✓ Downloaded {model_type} model: {model_name}")
+            else:
+                logger.error(f"✗ Failed to download {model_type} model: {model_name}")
+        
+        return results
+    
+    def get_model_info(self, model_name: str) -> Optional[Dict]:
+        """Get information about a specific model.
+        
+        Args:
+            model_name: Name of the model
+            
+        Returns:
+            Model information dictionary or None if not found
+        """
+        available_models = self.list_available_models()
+        return available_models.get(model_name)
+    
+    def is_model_available(self, model_name: str) -> bool:
+        """Check if a model is available in Ollama.
+        
+        Args:
+            model_name: Name of the model to check
+            
+        Returns:
+            True if model is available, False otherwise
+        """
+        try:
+            if not self.ollama_client.is_available():
+                return False
+            
+            available_models = self.ollama_client.list_models()
+            model_names = [model["name"] for model in available_models]
+            return model_name in model_names
+            
+        except Exception as e:
+            logger.error(f"Error checking model availability: {e}")
+            return False
+    
+    def get_recommended_models(self) -> Dict[str, Dict]:
+        """Get the recommended models configuration.
+        
+        Returns:
+            Dictionary of recommended models
+        """
+        return self.recommended_models.copy()
+
+    def get_download_progress(self) -> Dict[str, any]:
+        """Get download progress for the current download."""
+        return {
+            "model_variant": self._current_download["model_variant"],
+            "progress": self._current_download["progress"],
+            "status": self._current_download["status"],
+            "error": self._current_download["error"],
+            "total_size": 0,  # Ollama doesn't provide size info easily
             "downloaded_size": 0,
             "speed": 0.0,
             "eta": None
         }
     
-    def get_download_url(self, model_variant: str) -> str:
-        """
-        Generate the correct Hugging Face download URL for a model variant.
-        
-        Args:
-            model_variant: The model variant identifier (e.g., 'law-chat-q4_0')
-            
-        Returns:
-            The complete download URL
-            
-        Raises:
-            ModelDownloadError: If the model variant is not supported
-        """
-        if model_variant not in self.SUPPORTED_VARIANTS:
-            raise ModelDownloadError(
-                f"Unsupported model variant: {model_variant}. "
-                f"Supported variants: {list(self.SUPPORTED_VARIANTS.keys())}"
-            )
-        
-        filename = self.SUPPORTED_VARIANTS[model_variant]
-        # Use the direct download URL format from HuggingFace
-        url = f"https://huggingface.co/{self.HF_REPO}/resolve/main/{filename}"
-        
-        logger.info(f"Generated download URL for {model_variant}: {url}")
-        return url
-    
-    def get_model_path(self, model_variant: str) -> Path:
-        """Get the local file path where a model should be stored."""
-        filename = self.SUPPORTED_VARIANTS[model_variant]
-        return self.storage_dir / filename
-    
-    def is_model_downloaded(self, model_variant: str) -> bool:
-        """Check if a model is already downloaded and valid."""
-        model_path = self.get_model_path(model_variant)
-        if not model_path.exists():
+    def is_model_downloaded(self, model_name: str) -> bool:
+        """Check if model exists in Ollama."""
+        try:
+            return model_name in [m["name"] for m in self.ollama_client.list_models()]
+        except Exception:
             return False
-        
-        # Quick size validation
-        expected_size = self.EXPECTED_SIZES.get(model_variant)
-        if expected_size:
-            actual_size = model_path.stat().st_size
-            # Allow 5% variance in file size
-            size_diff = abs(actual_size - expected_size) / expected_size
-            if size_diff > 0.05:
-                logger.warning(
-                    f"Model {model_variant} size mismatch. "
-                    f"Expected: {expected_size}, Actual: {actual_size}"
-                )
-                return False
-        
-        return True
     
-    def track_progress(self, response: requests.Response, model_variant: str) -> Generator[Dict, None, None]:
-        """
-        Generator that tracks download progress and yields progress updates.
-        
-        Args:
-            response: The requests response object
-            model_variant: The model variant being downloaded
-            
-        Yields:
-            Dictionary containing progress information
-        """
-        total_size = int(response.headers.get('content-length', 0))
-        
-        # If content-length is not available, try to get the expected size
-        if total_size == 0:
-            total_size = self.EXPECTED_SIZES.get(model_variant, 0)
-            logger.warning(f"Content-length header missing, using expected size: {total_size}")
-            
-        downloaded_size = 0
-        start_time = time.time()
-        
+    def cancel_download(self) -> bool:
+        """Cancel download (reset state for Ollama)."""
         self._current_download.update({
-            "model_variant": model_variant,
-            "status": "downloading",
-            "total_size": total_size,
-            "downloaded_size": 0,
+            "model_variant": None,
+            "status": "idle",
             "progress": 0.0,
             "error": None
         })
-        
-        chunk_size = 8192  # 8KB chunks
-        last_update_time = start_time
-        
-        for chunk in response.iter_content(chunk_size=chunk_size):
-            if chunk:
-                downloaded_size += len(chunk)
-                current_time = time.time()
-                
-                # Update progress every 0.5 seconds to avoid too frequent updates
-                if current_time - last_update_time >= 0.5:
-                    elapsed_time = current_time - start_time
-                    speed = downloaded_size / elapsed_time if elapsed_time > 0 else 0
-                    
-                    # Calculate progress safely even if total_size is unknown
-                    if total_size > 0:
-                        progress = (downloaded_size / total_size * 100)
-                        eta = (total_size - downloaded_size) / speed if speed > 0 else None
-                    else:
-                        # If we don't know the total size, show progress as indeterminate
-                        progress = 0
-                        eta = None
-                        # Log the ongoing download size
-                        logger.info(f"Downloaded {downloaded_size / 1_000_000:.2f} MB so far (total size unknown)")
-                    
-                    self._current_download.update({
-                        "downloaded_size": downloaded_size,
-                        "progress": progress,
-                        "speed": speed,
-                        "eta": eta
-                    })
-                    
-                    last_update_time = current_time
-                    
-                    yield {
-                        "progress": progress,
-                        "downloaded_size": downloaded_size,
-                        "total_size": total_size,
-                        "speed": speed,
-                        "eta": eta,
-                        "status": "downloading"
-                    }
-                
-                yield chunk
-    
-    def validate_downloaded_file(self, file_path: Path, model_variant: str) -> bool:
-        """
-        Validate a downloaded model file.
-        
-        Args:
-            file_path: Path to the downloaded file
-            model_variant: The model variant identifier
-            
-        Returns:
-            True if the file is valid, False otherwise
-        """
-        if not file_path.exists():
-            logger.error(f"Downloaded file does not exist: {file_path}")
-            return False
-        
-        # Check file size
-        actual_size = file_path.stat().st_size
-        expected_size = self.EXPECTED_SIZES.get(model_variant)
-        
-        if expected_size:
-            size_diff = abs(actual_size - expected_size) / expected_size
-            if size_diff > 0.05:  # Allow 5% variance
-                logger.error(
-                    f"File size validation failed for {model_variant}. "
-                    f"Expected: {expected_size}, Actual: {actual_size}"
-                )
-                return False
-        
-        # Check if file is not empty and has reasonable content
-        if actual_size < 1000:  # Less than 1KB is definitely wrong
-            logger.error(f"Downloaded file is too small: {actual_size} bytes")
-            return False
-        
-        # Basic GGUF file format validation (check magic bytes)
-        try:
-            with open(file_path, 'rb') as f:
-                magic = f.read(4)
-                if magic != b'GGUF':
-                    logger.error(f"Invalid GGUF file format. Magic bytes: {magic}")
-                    return False
-        except Exception as e:
-            logger.error(f"Error reading file for validation: {e}")
-            return False
-        
-        logger.info(f"File validation successful for {model_variant}")
         return True
     
-    def download_model(self, model_variant: str, force: bool = False) -> bool:
-        """
-        Download a model from Hugging Face.
-        
-        Args:
-            model_variant: The model variant to download
-            force: If True, re-download even if file exists
-            
-        Returns:
-            True if download was successful, False otherwise
-            
-        Raises:
-            ModelDownloadError: If download fails
-        """
-        if model_variant not in self.SUPPORTED_VARIANTS:
-            raise ModelDownloadError(f"Unsupported model variant: {model_variant}")
-        
-        model_path = self.get_model_path(model_variant)
-        
-        # Check if already downloaded and valid
-        if not force and self.is_model_downloaded(model_variant):
-            logger.info(f"Model {model_variant} already downloaded and valid")
-            self._current_download["status"] = "completed"
-            return True
-        
-        # Start download
-        logger.info(f"Starting download of {model_variant}")
-        url = self.get_download_url(model_variant)
-        
-        try:
-            # Create a session for better connection handling
-            session = requests.Session()
-            session.headers.update({
-                'User-Agent': 'LawFirm-RAG/1.0.0 (https://github.com/lawfirm-rag/lawfirm-rag)'
-            })
-            
-            # Start the download with streaming
-            response = session.get(url, stream=True, timeout=30)
-            response.raise_for_status()
-            
-            # Create temporary file
-            temp_path = model_path.with_suffix('.tmp')
-            
-            with open(temp_path, 'wb') as f:
-                for chunk in self.track_progress(response, model_variant):
-                    if isinstance(chunk, bytes):
-                        f.write(chunk)
-            
-            # Validate the downloaded file
-            if not self.validate_downloaded_file(temp_path, model_variant):
-                temp_path.unlink(missing_ok=True)
-                self._current_download["status"] = "error"
-                self._current_download["error"] = "File validation failed"
-                raise ModelDownloadError("Downloaded file validation failed")
-            
-            # Move temp file to final location
-            temp_path.rename(model_path)
-            
-            self._current_download["status"] = "completed"
-            self._current_download["progress"] = 100.0
-            
-            logger.info(f"Successfully downloaded {model_variant} to {model_path}")
-            return True
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Network error downloading {model_variant}: {e}"
-            logger.error(error_msg)
-            self._current_download["status"] = "error"
-            self._current_download["error"] = error_msg
-            raise ModelDownloadError(error_msg)
-        
-        except Exception as e:
-            error_msg = f"Unexpected error downloading {model_variant}: {e}"
-            logger.error(error_msg)
-            self._current_download["status"] = "error"
-            self._current_download["error"] = error_msg
-            raise ModelDownloadError(error_msg)
-    
-    def get_download_progress(self) -> Dict:
-        """Get the current download progress information."""
-        return self._current_download.copy()
-    
-    def cancel_download(self) -> bool:
-        """
-        Cancel the current download.
-        
-        Returns:
-            True if cancellation was successful
-        """
-        if self._current_download["status"] == "downloading":
-            self._current_download["status"] = "cancelled"
-            logger.info("Download cancelled by user")
-            return True
-        return False
-    
-    def list_available_models(self) -> Dict[str, Dict]:
-        """
-        List all available model variants with their information.
-        
-        Returns:
-            Dictionary mapping variant names to their information
-        """
-        models = {}
-        for variant, filename in self.SUPPORTED_VARIANTS.items():
-            models[variant] = {
-                "filename": filename,
-                "size": self.EXPECTED_SIZES.get(variant, 0),
-                "downloaded": self.is_model_downloaded(variant),
-                "path": str(self.get_model_path(variant))
-            }
-        return models
-    
     def cleanup_failed_downloads(self) -> int:
-        """
-        Clean up any temporary or corrupted download files.
+        """Cleanup failed downloads (not applicable for Ollama but needed for API compatibility)."""
+        return 0
+
+
+def download_model(model_name: str) -> bool:
+    """Convenience function to download a model.
+    
+    Args:
+        model_name: Name of the model to download
         
-        Returns:
-            Number of files cleaned up
-        """
-        cleaned = 0
-        for file_path in self.storage_dir.glob("*.tmp"):
-            try:
-                file_path.unlink()
-                cleaned += 1
-                logger.info(f"Cleaned up temporary file: {file_path}")
-            except Exception as e:
-                logger.error(f"Error cleaning up {file_path}: {e}")
-        
-        return cleaned 
+    Returns:
+        True if download successful, False otherwise
+    """
+    downloader = ModelDownloader()
+    return downloader.download_model(model_name)
+
+
+def list_available_models() -> Dict[str, Dict]:
+    """Convenience function to list available models.
+    
+    Returns:
+        Dictionary of available models
+    """
+    downloader = ModelDownloader()
+    return downloader.list_available_models()
+
+
+if __name__ == "__main__":
+    # Simple CLI interface
+    downloader = ModelDownloader()
+    
+    print("Available models:")
+    models = downloader.list_available_models()
+    
+    for name, info in models.items():
+        status = "✓ Downloaded" if info["downloaded"] else "○ Not downloaded"
+        print(f"  {status} {name} - {info['description']} ({info['size']})")
+    
+    print("\nTo download a model, use:")
+    print("  python -c \"from lawfirm_rag.core.model_downloader import download_model; download_model('llama3.2')\"")
+    print("\nOr use the setup utility:")
+    print("  python -c \"from lawfirm_rag.utils.setup import quick_setup; quick_setup()\"") 

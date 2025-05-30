@@ -25,20 +25,38 @@ class QueryGenerator:
             "westlaw": {
                 "name": "Westlaw",
                 "syntax": "Terms and Connectors",
-                "operators": ["&", "|", "/s", "/p", "!", "%"],
-                "description": "Use & for AND, | for OR, /s for same sentence, /p for same paragraph"
+                "operators": ["&", "|", "/s", "/p", "/3", "/5", "!", "%"],
+                "description": "Use & for AND, | for OR, /s for same sentence, /p for same paragraph, ! for truncation"
             },
             "lexisnexis": {
                 "name": "LexisNexis",
                 "syntax": "Boolean",
                 "operators": ["AND", "OR", "NOT", "W/n", "PRE/n"],
-                "description": "Use AND, OR, NOT operators, W/n for within n words"
+                "description": "Use AND, OR, NOT operators, W/n for within n words, PRE/n for precedence"
+            },
+            "lexis": {
+                "name": "LexisNexis",
+                "syntax": "Boolean", 
+                "operators": ["AND", "OR", "NOT", "W/n", "PRE/n"],
+                "description": "Use AND, OR, NOT operators, W/n for within n words, PRE/n for precedence"
+            },
+            "bloomberg": {
+                "name": "Bloomberg Law",
+                "syntax": "Boolean + Field Search",
+                "operators": ["AND", "OR", "NOT", "NEAR/n", "title:", "headnotes:"],
+                "description": "Use AND, OR, NOT operators, NEAR/n for proximity, field searches with title: and headnotes:"
             },
             "casetext": {
                 "name": "Casetext",
                 "syntax": "Natural Language + Boolean",
                 "operators": ["AND", "OR", "NOT", "NEAR"],
                 "description": "Supports natural language queries and boolean operators"
+            },
+            "fastcase": {
+                "name": "Fastcase",
+                "syntax": "Boolean",
+                "operators": ["AND", "OR", "NOT", "&", "|"],
+                "description": "Use AND, OR, NOT operators or & and | symbols"
             }
         }
         
@@ -236,30 +254,47 @@ class QueryGenerator:
         # Check query length
         query_words = len(query.split())
         if query_words < 3:
-            suggestions.append("Consider adding more specific terms to narrow your search")
-        elif query_words > 15:
-            suggestions.append("Consider simplifying the query for better results")
+            suggestions.append("Consider adding more specific legal terms to narrow your search")
+        elif query_words > 20:
+            suggestions.append("Consider simplifying the query for better performance")
             
         # Database-specific suggestions
         if database == "westlaw":
             if "&" not in query and "|" not in query:
                 suggestions.append("Consider using & (AND) or | (OR) operators for better precision")
             if "/s" not in query and "/p" not in query and "/3" not in query:
-                suggestions.append("Use /s for same sentence, /p for same paragraph, or /n for within n words")
+                suggestions.append("Use proximity operators: /s (same sentence), /p (same paragraph), /3 (within 3 words)")
             if "!" not in query:
-                suggestions.append("Use ! for truncation (e.g., negligen! for negligent/negligence)")
-            suggestions.append("Use parentheses for grouping: (contract | agreement) & breach")
+                suggestions.append("Use ! for truncation to find word variations (e.g., negligen! for negligent/negligence)")
+            suggestions.append("Group related terms with parentheses: (contract | agreement) & breach")
+            suggestions.append("Focus on legal concepts rather than specific names or dates")
             
-        elif database == "lexisnexis":
+        elif database in ["lexisnexis", "lexis"]:
             if "AND" not in query and "OR" not in query:
                 suggestions.append("Consider using AND or OR operators for better control")
-            suggestions.append("Use W/n for within n words proximity searching")
+            suggestions.append("Use W/3 or W/5 for proximity searching within n words")
+            suggestions.append("Use PRE/3 when word order matters (A before B within 3 words)")
+            suggestions.append("Focus on legal causes of action and remedies")
+            
+        elif database == "bloomberg":
+            if "AND" not in query and "OR" not in query:
+                suggestions.append("Consider using AND or OR operators for better control")
+            suggestions.append("Use NEAR/5 for proximity searching within 5 words")
+            suggestions.append("Try field searches: title:(your terms) or headnotes:(legal concepts)")
+            suggestions.append("Focus on substantive legal issues rather than procedural details")
             
         elif database == "casetext":
             suggestions.append("Try natural language queries for broader results")
-            suggestions.append("Use boolean operators for more precise searches")
+            suggestions.append("Use boolean operators (AND, OR) for more precise searches")
+            suggestions.append("Focus on legal principles and case outcomes")
             
-        # General suggestions
+        elif database == "fastcase":
+            suggestions.append("Use AND, OR, NOT operators or & and | symbols")
+            suggestions.append("Focus on legal issues and statutory citations")
+            
+        # General suggestions for all databases
+        suggestions.append("Avoid including specific dates, names, or locations unless legally relevant")
+        suggestions.append("Focus on causes of action, legal standards, and remedies")
         suggestions.append(f"Syntax help: {db_info['description']}")
         
         return suggestions
