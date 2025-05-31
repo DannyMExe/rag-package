@@ -100,6 +100,18 @@ def ensure_environment() -> bool:
     return False
 
 
+def check_python_version():
+    """Check if Python version meets requirements."""
+    if sys.version_info < (3, 11):
+        console.print(f"[red]❌ Python {sys.version_info.major}.{sys.version_info.minor} is not supported[/red]")
+        console.print("[yellow]RAG requires Python 3.11 or higher[/yellow]")
+        console.print("\n[cyan]Installation guide for multiple Python versions:[/cyan]")
+        console.print("[green]Windows:[/green] py -3.11 -m pip install rag-package")
+        console.print("[green]macOS/Linux:[/green] python3.11 -m pip install rag-package")
+        return False
+    return True
+
+
 @click.group()
 @click.version_option(version=__version__, prog_name="rag")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
@@ -131,6 +143,10 @@ def main(ctx: click.Context, verbose: bool, config: Optional[str], skip_checks: 
     if ctx.invoked_subcommand == "setup":
         return
     
+    # Check Python version first
+    if not check_python_version():
+        sys.exit(1)
+    
     # Check environment unless skipped
     if not skip_env_check and not ensure_environment():
         sys.exit(1)
@@ -141,6 +157,7 @@ def main(ctx: click.Context, verbose: bool, config: Optional[str], skip_checks: 
     
     if verbose:
         console.print(f"[green]RAG v{__version__}[/green]")
+        console.print(f"[dim]Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}[/dim]")
         if config:
             console.print(f"[blue]Using config: {config}[/blue]")
 

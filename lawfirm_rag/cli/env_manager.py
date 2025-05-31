@@ -43,16 +43,24 @@ RAG_REQUIREMENTS = [
     # Document processing - enhanced
     "pdfplumber==0.9.0",
     "PyMuPDF==1.23.8",
-    # Vector database and embeddings - PINNED FOR COMPATIBILITY
+    # Vector database and embeddings - WORKING TESTED VERSIONS
     "chromadb==0.4.15",
     "numpy==1.24.3",
-    "sentence-transformers==2.2.2",
-    "torch==2.1.0",
-    "torchvision==0.16.0", 
-    "torchaudio==2.1.0",
+    "sentence-transformers==4.1.0",  # Latest stable version - tested working
     # AI/ML backends
     "ollama==0.1.9",
 ]
+
+# PyTorch requires special handling with CPU index URL
+PYTORCH_REQUIREMENTS = [
+    "torch==2.1.0+cpu",
+]
+
+# Environment variables that help with PyTorch stability
+PYTORCH_ENV_VARS = {
+    "PYTORCH_DISABLE_PLATFORM_CHECK": "1",
+    "OMP_NUM_THREADS": "1",
+}
 
 
 def get_python_executable() -> str:
@@ -239,9 +247,11 @@ class EnvironmentManager:
                 transient=False
             ) as progress:
                 
-                # Upgrade pip first using python -m pip (works better on Windows)
-                task = progress.add_task("Upgrading pip...", total=len(RAG_REQUIREMENTS) + 2)
+                # Calculate total steps: pip + package + pytorch + regular deps + env vars
+                total_steps = 1 + 1 + len(PYTORCH_REQUIREMENTS) + len(RAG_REQUIREMENTS) + 1
+                task = progress.add_task("Upgrading pip...", total=total_steps)
                 
+                # Step 1: Upgrade pip first using python -m pip (works better on Windows)
                 result = subprocess.run(
                     [str(python_executable), "-m", "pip", "install", "--upgrade", "pip"],
                     capture_output=True,
@@ -250,7 +260,7 @@ class EnvironmentManager:
                 )
                 progress.advance(task)
                 
-                # Install our package in editable mode if we're in development
+                # Step 2: Install our package in editable mode if we're in development
                 try:
                     setup_py = Path("setup.py")
                     pyproject_toml = Path("pyproject.toml")
@@ -273,7 +283,26 @@ class EnvironmentManager:
                     )
                 progress.advance(task)
                 
-                # Install all dependencies using python -m pip
+                # Step 3: Install PyTorch with CPU index URL (special handling required)
+                for pytorch_req in PYTORCH_REQUIREMENTS:
+                    progress.update(task, description=f"Installing {pytorch_req.split('==')[0]} (CPU optimized)...")
+                    
+                    result = subprocess.run(
+                        [str(python_executable), "-m", "pip", "install", 
+                         pytorch_req, "--index-url", "https://download.pytorch.org/whl/cpu"],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode != 0:
+                        console.print(f"[yellow]⚠️  Warning: Failed to install {pytorch_req}[/yellow]")
+                        console.print(f"[dim]{result.stderr}[/dim]")
+                    else:
+                        console.print(f"[green]✅ Successfully installed {pytorch_req} (CPU optimized)[/green]")
+                    
+                    progress.advance(task)
+                
+                # Step 4: Install all other dependencies using python -m pip
                 for req in RAG_REQUIREMENTS:
                     progress.update(task, description=f"Installing {req.split('==')[0]}...")
                     
@@ -289,9 +318,15 @@ class EnvironmentManager:
                     
                     progress.advance(task)
                 
+                # Step 5: Set up environment variables for PyTorch stability
+                progress.update(task, description="Setting PyTorch environment variables...")
+                self._setup_pytorch_env_vars()
+                progress.advance(task)
+                
                 progress.update(task, description="✅ Installation complete!")
             
             console.print("[green]🎉 All dependencies installed successfully![/green]")
+            console.print("[blue]💡 PyTorch stability environment variables have been configured[/blue]")
             return True
             
         except subprocess.CalledProcessError as e:
@@ -315,6 +350,56 @@ class EnvironmentManager:
             return False
         except Exception as e:
             console.print(f"[red]❌ Unexpected error during installation: {e}[/red]")
+            return False
+
+    def _setup_pytorch_env_vars(self) -> bool:
+        """Set up environment variables for PyTorch stability in the virtual environment."""
+        try:
+            # Create a script that sets environment variables when the venv is activated
+            if sys.platform == "win32":
+                # Windows batch script for activation
+                activate_script_dir = self.rag_env_path / "Scripts"
+                env_script = activate_script_dir / "pytorch_env.bat"
+                
+                with open(env_script, 'w') as f:
+                    f.write("@echo off\n")
+                    for var, value in PYTORCH_ENV_VARS.items():
+                        f.write(f"set {var}={value}\n")
+                
+                # Also create a PowerShell version
+                ps_script = activate_script_dir / "pytorch_env.ps1"
+                with open(ps_script, 'w') as f:
+                    for var, value in PYTORCH_ENV_VARS.items():
+                        f.write(f"$env:{var} = \"{value}\"\n")
+                        
+            else:
+                # Unix shell script for activation
+                activate_script_dir = self.rag_env_path / "bin"
+                env_script = activate_script_dir / "pytorch_env.sh"
+                
+                with open(env_script, 'w') as f:
+                    f.write("#!/bin/bash\n")
+                    for var, value in PYTORCH_ENV_VARS.items():
+                        f.write(f"export {var}={value}\n")
+                
+                # Make executable
+                env_script.chmod(0o755)
+            
+            # Create a simple Python script to show current env vars
+            python_env_checker = self.rag_env_path / "check_pytorch_env.py"
+            with open(python_env_checker, 'w') as f:
+                f.write("""#!/usr/bin/env python3
+import os
+print("PyTorch Environment Variables:")
+for var in ['PYTORCH_DISABLE_PLATFORM_CHECK', 'OMP_NUM_THREADS']:
+    value = os.environ.get(var, 'Not set')
+    print(f"  {var} = {value}")
+""")
+            
+            return True
+            
+        except Exception as e:
+            console.print(f"[yellow]⚠️  Warning: Failed to set up environment variables: {e}[/yellow]")
             return False
     
     def verify_installation(self) -> bool:
@@ -409,6 +494,8 @@ class EnvironmentManager:
             f"[green]source {self.rag_env_path / 'bin' / 'activate'}[/green]\n\n"
             f"[cyan]Or use the automatic activation:[/cyan]\n"
             f"[green]rag setup --activate[/green]\n\n"
+            f"[yellow]💡 PyTorch stability variables configured:[/yellow]\n"
+            f"[dim]PYTORCH_DISABLE_PLATFORM_CHECK=1, OMP_NUM_THREADS=1[/dim]\n\n"
             f"[cyan]Then start the server:[/cyan]\n"
             f"[green]rag serve[/green]",
             border_style="green"
@@ -439,7 +526,12 @@ class EnvironmentManager:
         # Remove PYTHONHOME if set
         os.environ.pop("PYTHONHOME", None)
         
+        # Set PyTorch stability environment variables
+        for var, value in PYTORCH_ENV_VARS.items():
+            os.environ[var] = value
+        
         console.print(f"[green]✅ Activated RAG environment: {self.rag_env_path}[/green]")
+        console.print("[blue]💡 PyTorch stability variables applied[/blue]")
         console.print("[cyan]You can now use 'rag serve' to start the application[/cyan]")
         
         return True

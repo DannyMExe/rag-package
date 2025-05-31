@@ -51,6 +51,61 @@ The system is **complete and working end-to-end** with all major features implem
 - **Logging**: Detailed logging for monitoring and debugging
 - **Configuration**: Flexible YAML/TOML configuration management
 
+## 🚀 Installation
+
+### Prerequisites
+- **Python 3.11+** (Required for AI/ML dependencies)
+- Windows, macOS, or Linux
+- 4GB+ RAM recommended
+
+### Quick Install
+
+#### Single Python Version
+```bash
+pip install rag-package
+rag setup
+rag serve
+```
+
+#### Multiple Python Versions Installed
+
+**Windows (Recommended):**
+```bash
+# Use Python Launcher to specify version
+py -3.11 -m pip install rag-package
+py -3.11 -m rag setup
+py -3.11 -m rag serve
+```
+
+**macOS/Linux:**
+```bash
+# Use specific Python version
+python3.11 -m pip install rag-package
+python3.11 -m rag setup
+python3.11 -m rag serve
+```
+
+**Alternative: Virtual Environment (All Platforms):**
+```bash
+# Create environment with Python 3.11
+py -3.11 -m venv rag-env          # Windows
+python3.11 -m venv rag-env        # macOS/Linux
+
+# Activate environment
+rag-env\Scripts\activate           # Windows
+source rag-env/bin/activate       # macOS/Linux
+
+# Install normally
+pip install rag-package
+rag setup
+rag serve
+```
+
+### Verification
+```bash
+rag --version
+```
+
 ## 🚀 Quick Start
 
 ### 💻 Professional Installation & Setup
@@ -180,12 +235,13 @@ if ai_engine.load_model():
 ### Required Dependencies
 - **Python**: 3.11+ (recommended: 3.11 or 3.12)
 - **Automatic Environment**: The `rag setup` command automatically creates an isolated environment with:
-  - PyTorch 2.1.0 (CPU version with compatibility fixes)
+  - PyTorch 2.1.0+cpu (CPU-optimized version for maximum compatibility)
   - ChromaDB 0.4.15 (vector database) 
-  - Sentence Transformers 2.2.2 (embeddings)
+  - Sentence Transformers 4.1.0 (latest stable embeddings)
   - FastAPI + Uvicorn (web interface)
   - Rich CLI interface
   - All other dependencies with exact pinned versions
+  - Automatic PyTorch stability configuration
 
 ### Why Isolated Environment?
 This package uses **specific versions** of AI/ML libraries that may conflict with other projects. The automatic environment setup ensures:
@@ -200,12 +256,11 @@ This package uses **specific versions** of AI/ML libraries that may conflict wit
 - **API Models**: OpenAI, Anthropic, etc. (via configuration)
 
 ### Environment Setup
-The system automatically configures optimal settings for PyTorch compatibility:
+The system automatically configures optimal settings for PyTorch stability:
 ```bash
-# These are set automatically by the system
-export KMP_DUPLICATE_LIB_OK=TRUE
-export OMP_NUM_THREADS=4
-export MKL_NUM_THREADS=4
+# These are set automatically by the system for optimal performance
+export PYTORCH_DISABLE_PLATFORM_CHECK=1  # Prevents platform compatibility errors
+export OMP_NUM_THREADS=1                  # Optimizes CPU performance
 ```
 
 ## 🎉 Latest Release Highlights

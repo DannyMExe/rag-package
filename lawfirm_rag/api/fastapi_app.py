@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any, Tuple
 from pathlib import Path
 from datetime import datetime
 import uuid
+import time
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Security, BackgroundTasks, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -20,21 +21,23 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from ..core.document_processor import DocumentProcessor
-from ..core.ai_engine import AIEngine, create_ai_engine_from_config
-from ..core.query_generator import QueryGenerator
-from ..core.model_downloader import ModelDownloader
-from ..core.model_manager import ModelManager
-from ..utils.config import ConfigManager
-from ..core.enhanced_document_processor import EnhancedDocumentProcessor
+# LAZY IMPORTS - Only import when needed to avoid 20-second startup delay
+# from ..core.document_processor import DocumentProcessor
+# from ..core.ai_engine import AIEngine, create_ai_engine_from_config
+# from ..core.query_generator import QueryGenerator
+# from ..core.model_downloader import ModelDownloader
+# from ..core.model_manager import ModelManager
+# from ..core.enhanced_document_processor import EnhancedDocumentProcessor
 
-# Vector Store imports
-try:
-    from ..core.vector_store import create_vector_store
-    VECTOR_STORE_AVAILABLE = True
-except ImportError as e:
-    VECTOR_STORE_AVAILABLE = False
-    logging.warning(f"Vector store not available: {e}")
+from ..utils.config import ConfigManager
+
+# Vector Store imports - also made lazy
+# try:
+#     from ..core.vector_store import create_vector_store
+#     VECTOR_STORE_AVAILABLE = True
+# except ImportError as e:
+#     VECTOR_STORE_AVAILABLE = False
+#     logging.warning(f"Vector store not available: {e}")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -74,68 +77,129 @@ PUBLIC_ENDPOINTS = [
     "/openapi.json"
 ]
 
-# Global components
+# Global components - now initialized lazily
 config_manager = ConfigManager()
-doc_processor = DocumentProcessor()
-ai_engine = None
-query_generator = None
-model_downloader = ModelDownloader()
-model_manager = ModelManager()
 
-# Initialize enhanced document processor
-try:
-    temp_dir = config_manager.get_temp_dir()
-    enhanced_doc_processor = EnhancedDocumentProcessor(
-        temp_dir=str(temp_dir),
-        chunk_size=1000,
-        chunk_overlap=200,
-        use_vector_db=True
-    )
-    logger.info("Enhanced document processor initialized")
-except Exception as e:
-    logger.warning(f"Enhanced document processor failed to initialize: {e}")
-    enhanced_doc_processor = None
+# Lazy-loaded global components
+_doc_processor = None
+_ai_engine = None
+_query_generator = None
+_model_downloader = None
+_model_manager = None
+_enhanced_doc_processor = None
+_vector_store = None
+_vector_store_available = None
 
-# Initialize vector store
-vector_store = None
-if VECTOR_STORE_AVAILABLE:
-    try:
-        vector_store = create_vector_store("lawfirm_documents", "legal")
-        logger.info("Vector store initialized successfully")
-    except Exception as e:
-        logger.warning(f"Vector store failed to initialize: {e}")
-        vector_store = None
+def get_doc_processor():
+    """Lazy load document processor."""
+    global _doc_processor
+    if _doc_processor is None:
+        from ..core.document_processor import DocumentProcessor
+        _doc_processor = DocumentProcessor()
+        logger.info("Document processor initialized")
+    return _doc_processor
+
+def get_enhanced_doc_processor():
+    """Lazy load enhanced document processor."""
+    global _enhanced_doc_processor
+    if _enhanced_doc_processor is None:
+        try:
+            from ..core.enhanced_document_processor import EnhancedDocumentProcessor
+            temp_dir = config_manager.get_temp_dir()
+            _enhanced_doc_processor = EnhancedDocumentProcessor(
+                temp_dir=str(temp_dir),
+                chunk_size=1000,
+                chunk_overlap=200,
+                use_vector_db=True
+            )
+            logger.info("Enhanced document processor initialized")
+        except Exception as e:
+            logger.warning(f"Enhanced document processor failed to initialize: {e}")
+            _enhanced_doc_processor = None
+    return _enhanced_doc_processor
+
+def get_ai_engine():
+    """Lazy load AI engine."""
+    global _ai_engine
+    if _ai_engine is None:
+        try:
+            from ..core.ai_engine import create_ai_engine_from_config
+            config = config_manager.get_config()
+            _ai_engine = create_ai_engine_from_config(config)
+            
+            if _ai_engine and _ai_engine.load_model():
+                logger.info("AI engine initialized successfully")
+            else:
+                logger.warning("Failed to load AI model")
+                _ai_engine = None
+        except Exception as e:
+            logger.warning(f"Failed to initialize AI engine: {e}")
+            _ai_engine = None
+    return _ai_engine
+
+def get_query_generator():
+    """Lazy load query generator."""
+    global _query_generator
+    if _query_generator is None:
+        try:
+            from ..core.query_generator import QueryGenerator
+            ai_engine = get_ai_engine()
+            if ai_engine:
+                _query_generator = QueryGenerator(ai_engine)
+                logger.info("Query generator initialized with AI")
+            else:
+                _query_generator = QueryGenerator()
+                logger.info("Query generator initialized without AI")
+        except Exception as e:
+            logger.warning(f"Failed to initialize query generator: {e}")
+            from ..core.query_generator import QueryGenerator
+            _query_generator = QueryGenerator()
+    return _query_generator
+
+def get_model_downloader():
+    """Lazy load model downloader."""
+    global _model_downloader
+    if _model_downloader is None:
+        from ..core.model_downloader import ModelDownloader
+        _model_downloader = ModelDownloader()
+        logger.info("Model downloader initialized")
+    return _model_downloader
+
+def get_model_manager():
+    """Lazy load model manager."""
+    global _model_manager
+    if _model_manager is None:
+        from ..core.model_manager import ModelManager
+        _model_manager = ModelManager()
+        logger.info("Model manager initialized")
+    return _model_manager
+
+def get_vector_store():
+    """Lazy load vector store."""
+    global _vector_store, _vector_store_available
+    if _vector_store_available is None:
+        try:
+            from ..core.vector_store import create_vector_store
+            _vector_store_available = True
+        except ImportError as e:
+            _vector_store_available = False
+            logger.warning(f"Vector store not available: {e}")
+            return None
+    
+    if _vector_store_available and _vector_store is None:
+        try:
+            from ..core.vector_store import create_vector_store
+            _vector_store = create_vector_store("lawfirm_documents", "legal")
+            logger.info("Vector store initialized successfully")
+        except Exception as e:
+            logger.warning(f"Vector store failed to initialize: {e}")
+            _vector_store = None
+    
+    return _vector_store
 
 # Setup templates
 templates_dir = Path(__file__).parent.parent / "web" / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
-
-# Initialize AI components
-def initialize_ai_components():
-    """Initialize AI engine and query generator."""
-    global ai_engine, query_generator
-    
-    try:
-        # Use new configuration-based AI engine creation
-        config = config_manager.get_config()
-        ai_engine = create_ai_engine_from_config(config)
-        
-        # Try to load the model
-        if ai_engine.load_model():
-            query_generator = QueryGenerator(ai_engine)
-            logger.info("AI components initialized successfully with new backend system")
-        else:
-            logger.warning("Failed to load AI model with new backend system")
-            ai_engine = None
-            
-    except Exception as e:
-        logger.warning(f"Failed to initialize AI components with new backend: {e}")
-        ai_engine = None
-    
-    # Fallback query generator without AI
-    if not query_generator:
-        query_generator = QueryGenerator()
-        logger.info("Query generator initialized without AI model")
 
 # Mount static files for frontend assets
 web_static_path = Path(__file__).parent.parent / "web" / "static"
@@ -154,12 +218,11 @@ if web_static_path.exists():
 else:
     logger.warning(f"Web static directory not found: {web_static_path}")
 
-# Initialize on startup
+# Initialize on startup (non-blocking with lazy loading)
 @app.on_event("startup")
 async def startup_event():
     """Initialize components on startup."""
-    # Initialize AI components
-    initialize_ai_components()
+    logger.info("FastAPI app started with lazy loading enabled")
 
 # Authentication dependency
 async def verify_api_key(request: Request, credentials: HTTPAuthorizationCredentials = Security(security)):
@@ -287,6 +350,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    # Use lazy loaders - these will only load when first accessed
+    model_manager = get_model_manager()
+    query_generator = get_query_generator()
+    
     active_model = model_manager.get_active_model()
     status = model_manager.get_status()
     
@@ -315,33 +382,24 @@ async def create_collection(
 ):
     """Create a new document collection."""
     try:
-        name = request.get("name")
+        enhanced_doc_processor = get_enhanced_doc_processor()
+        if not enhanced_doc_processor:
+            raise HTTPException(status_code=500, detail="Document processor not available")
+            
+        name = request.get("name", f"collection_{uuid.uuid4().hex[:8]}")
         description = request.get("description", "")
         
-        if not name:
-            raise HTTPException(status_code=400, detail="Collection name is required")
+        collection_id = enhanced_doc_processor.create_collection(name, description)
         
-        if enhanced_doc_processor:
-            collection_id = enhanced_doc_processor.create_collection(name, description)
-            return {
-                "collection_id": collection_id,
-                "name": name,
-                "description": description,
-                "created": True
-            }
-        else:
-            # Fallback to session-based approach
-            session_id = doc_processor.create_session()
-            return {
-                "collection_id": session_id,
-                "name": name,
-                "description": description,
-                "created": True,
-                "fallback": True
-            }
-            
+        return {
+            "collection_id": collection_id,
+            "name": name,
+            "description": description,
+            "status": "created"
+        }
+        
     except Exception as e:
-        logger.error(f"Error creating collection: {e}")
+        logger.error(f"Failed to create collection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/collections")
@@ -350,15 +408,15 @@ async def list_collections(
 ):
     """List all document collections."""
     try:
-        if enhanced_doc_processor:
-            collections = enhanced_doc_processor.list_collections()
-            return {"collections": collections}
-        else:
-            # Fallback: return empty list for session-based approach
-            return {"collections": [], "fallback": True}
+        enhanced_doc_processor = get_enhanced_doc_processor()
+        if not enhanced_doc_processor:
+            return {"collections": []}
             
+        collections = enhanced_doc_processor.list_collections()
+        return {"collections": collections}
+        
     except Exception as e:
-        logger.error(f"Error listing collections: {e}")
+        logger.error(f"Failed to list collections: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload")
@@ -370,6 +428,7 @@ async def upload_documents(
     """Upload and process documents with enhanced processing."""
     try:
         # Use enhanced processor if available
+        enhanced_doc_processor = get_enhanced_doc_processor()
         if enhanced_doc_processor:
             # Create collection if not provided
             if not collection_id:
@@ -423,6 +482,7 @@ async def upload_documents(
         
         else:
             # Fallback to original session-based approach
+            doc_processor = get_doc_processor()
             if not collection_id:
                 collection_id = doc_processor.create_session()
             
@@ -474,38 +534,44 @@ async def analyze_documents(
         text = ""
         
         # Try enhanced processor first
+        enhanced_doc_processor = get_enhanced_doc_processor()
         if enhanced_doc_processor:
             try:
                 # Use the new get_combined_text method
                 text = enhanced_doc_processor.get_combined_text(request.session_id)
             except ValueError:
                 # Collection not found in enhanced processor, try fallback
+                doc_processor = get_doc_processor()
                 if hasattr(doc_processor, 'get_combined_text'):
-                    text = doc_processor.get_combined_text(request.session_id)
-                else:
-                    text = ""
+                    try:
+                        text = doc_processor.get_combined_text(request.session_id)
+                    except:
+                        pass
         
         if not text:
-            raise HTTPException(status_code=404, detail="Collection not found or no documents")
+            raise HTTPException(status_code=404, detail="Session/Collection not found or no documents")
         
-        # Perform analysis
+        # Use AI model if available
+        ai_engine = get_ai_engine()
         if ai_engine and ai_engine.is_loaded:
             try:
                 result = ai_engine.analyze_document(text, request.analysis_type)
-                method = "ai"
+                return AnalysisResponse(
+                    session_id=request.session_id,
+                    analysis_type=request.analysis_type,
+                    result=result,
+                    method="ai_model"
+                )
             except Exception as e:
-                logger.warning(f"AI analysis failed: {e}")
-                result = _fallback_analysis(text, request.analysis_type)
-                method = "fallback"
-        else:
-            result = _fallback_analysis(text, request.analysis_type)
-            method = "fallback"
+                logger.warning(f"AI analysis failed, using fallback: {e}")
         
+        # Fallback to simple analysis
+        result = _fallback_analysis(text, request.analysis_type)
         return AnalysisResponse(
             session_id=request.session_id,
             analysis_type=request.analysis_type,
             result=result,
-            method=method
+            method="fallback"
         )
         
     except HTTPException:
@@ -525,6 +591,7 @@ async def generate_query(
         text = ""
         
         # Try enhanced processor first
+        enhanced_doc_processor = get_enhanced_doc_processor()
         if enhanced_doc_processor:
             try:
                 text = enhanced_doc_processor.get_combined_text(request.session_id)
@@ -533,16 +600,19 @@ async def generate_query(
                 pass
         
         # Fall back to original session-based processor
-        if not text and hasattr(doc_processor, 'get_combined_text'):
-            try:
-                text = doc_processor.get_combined_text(request.session_id)
-            except:
-                pass
+        if not text:
+            doc_processor = get_doc_processor()
+            if hasattr(doc_processor, 'get_combined_text'):
+                try:
+                    text = doc_processor.get_combined_text(request.session_id)
+                except:
+                    pass
         
         if not text:
             raise HTTPException(status_code=404, detail="Session/Collection not found or no documents")
         
         # Generate queries
+        query_generator = get_query_generator()
         if request.all_databases:
             results = query_generator.generate_multiple_queries(text)
             return {"session_id": request.session_id, "queries": results}
@@ -570,6 +640,7 @@ async def get_session(
     """Get information about a session or collection."""
     try:
         # Try enhanced processor first
+        enhanced_doc_processor = get_enhanced_doc_processor()
         if enhanced_doc_processor:
             try:
                 collection_info = enhanced_doc_processor.get_collection_info(session_id)
@@ -596,6 +667,7 @@ async def get_session(
                 pass
         
         # Fall back to original session approach
+        doc_processor = get_doc_processor()
         if hasattr(doc_processor, 'get_session_documents'):
             documents = doc_processor.get_session_documents(session_id)
             text = doc_processor.get_combined_text(session_id)
@@ -621,6 +693,7 @@ async def cleanup_session(
     """Clean up a session or collection."""
     try:
         # Try enhanced processor first
+        enhanced_doc_processor = get_enhanced_doc_processor()
         if enhanced_doc_processor:
             try:
                 enhanced_doc_processor.cleanup_collection(session_id)
@@ -629,6 +702,7 @@ async def cleanup_session(
                 pass
         
         # Fall back to original session cleanup
+        doc_processor = get_doc_processor()
         if hasattr(doc_processor, 'cleanup_session'):
             doc_processor.cleanup_session(session_id)
             return {"message": f"Session {session_id} cleaned up successfully", "enhanced": False}
@@ -645,6 +719,7 @@ async def list_models(
 ):
     """List available AI models."""
     try:
+        model_manager = get_model_manager()
         available = model_manager.discover_models()
         loaded = model_manager.get_loaded_models()
         status = model_manager.get_status()
@@ -666,6 +741,7 @@ async def list_available_models(
 ):
     """List all available models for download with their current status."""
     try:
+        model_downloader = get_model_downloader()
         available_models = model_downloader.list_available_models()
         download_status = model_downloader.get_download_progress()
         
@@ -682,14 +758,11 @@ async def _download_model_background(model_variant: str, force: bool = False):
     """Background task to download a model."""
     try:
         logger.info(f"Starting background download of {model_variant}")
+        model_downloader = get_model_downloader()
         success = model_downloader.download_model(model_variant, force=force)
         
         if success:
             logger.info(f"Successfully downloaded {model_variant}")
-            # Reinitialize AI components if this is the first model
-            global ai_engine, query_generator
-            if not ai_engine or not ai_engine.is_loaded:
-                initialize_ai_components()
         else:
             logger.error(f"Failed to download {model_variant}")
             
@@ -710,6 +783,8 @@ async def download_model(
                 status_code=400,
                 detail="Model variant cannot be empty"
             )
+        
+        model_downloader = get_model_downloader()
         
         # Check if already downloaded
         if not request.force and model_downloader.is_model_downloaded(request.model_variant):
@@ -758,17 +833,18 @@ async def get_download_progress(
 ):
     """Get the current download progress."""
     try:
+        model_downloader = get_model_downloader()
         progress = model_downloader.get_download_progress()
         
         return ModelProgressResponse(
-            model_variant=progress["model_variant"],
-            progress=progress["progress"],
-            status=progress["status"],
-            error=progress["error"],
-            total_size=progress["total_size"],
-            downloaded_size=progress["downloaded_size"],
-            speed=progress["speed"],
-            eta=progress["eta"]
+            model_variant=progress.get("model_variant"),
+            progress=progress.get("progress", 0.0),
+            status=progress.get("status", "idle"),
+            error=progress.get("error"),
+            total_size=progress.get("total_size", 0),
+            downloaded_size=progress.get("downloaded_size", 0),
+            speed=progress.get("speed", 0.0),
+            eta=progress.get("eta")
         )
         
     except Exception as e:
@@ -781,6 +857,7 @@ async def cancel_download(
 ):
     """Cancel the current model download."""
     try:
+        model_downloader = get_model_downloader()
         success = model_downloader.cancel_download()
         
         if success:
@@ -798,6 +875,7 @@ async def cleanup_failed_downloads(
 ):
     """Clean up any failed or temporary download files."""
     try:
+        model_downloader = get_model_downloader()
         cleaned_count = model_downloader.cleanup_failed_downloads()
         
         return {
@@ -817,6 +895,7 @@ async def get_loaded_models(
 ):
     """Get information about currently loaded models."""
     try:
+        model_manager = get_model_manager()
         loaded_models = model_manager.get_loaded_models()
         status = model_manager.get_status()
         
@@ -845,6 +924,8 @@ async def load_model(
 ):
     """Load a downloaded model into memory."""
     try:
+        model_manager = get_model_manager()
+        
         # Validate that the model exists and is downloaded
         available_models = model_manager.discover_models()
         
@@ -859,13 +940,6 @@ async def load_model(
         success = model_manager.load_model(request.model_variant, request.force_reload)
         
         if success:
-            # Update global AI components
-            global ai_engine, query_generator
-            ai_engine = model_manager.get_active_model()
-            if ai_engine and ai_engine.is_loaded:
-                from ..core.query_generator import QueryGenerator
-                query_generator = QueryGenerator(ai_engine)
-            
             return ModelLoadResponse(
                 message=f"Model {request.model_variant} loaded successfully",
                 model_variant=request.model_variant,
@@ -893,21 +967,10 @@ async def unload_model(
 ):
     """Unload a model from memory."""
     try:
+        model_manager = get_model_manager()
         success = model_manager.unload_model(model_variant)
         
         if success:
-            # Update global AI components if we unloaded the active model
-            global ai_engine, query_generator
-            active_model = model_manager.get_active_model()
-            
-            if active_model:
-                ai_engine = active_model
-                from ..core.query_generator import QueryGenerator
-                query_generator = QueryGenerator(ai_engine)
-            else:
-                ai_engine = None
-                query_generator = QueryGenerator()  # Fallback mode
-            
             return {
                 "message": f"Model {model_variant} unloaded successfully",
                 "model_variant": model_variant,
@@ -931,16 +994,10 @@ async def switch_active_model(
 ):
     """Switch the active model without unloading others."""
     try:
+        model_manager = get_model_manager()
         success = model_manager.switch_active_model(model_variant)
         
         if success:
-            # Update global AI components
-            global ai_engine, query_generator
-            ai_engine = model_manager.get_active_model()
-            if ai_engine and ai_engine.is_loaded:
-                from ..core.query_generator import QueryGenerator
-                query_generator = QueryGenerator(ai_engine)
-            
             return {
                 "message": f"Switched to model {model_variant}",
                 "model_variant": model_variant,
@@ -1048,12 +1105,11 @@ async def _process_bulk_upload_background(
     batch_size: int,
     add_to_vector_store: bool
 ):
-    """Background task for processing bulk uploads with progress tracking."""
-    import time
-    start_time = time.time()
+    """Background task to process uploaded files."""
     
     try:
-        # Initialize progress
+        start_time = time.time()
+        
         UPLOAD_PROGRESS[upload_id] = {
             "status": "processing",
             "total_files": len(files_data),
@@ -1066,6 +1122,10 @@ async def _process_bulk_upload_background(
             "errors": [],
             "start_time": start_time
         }
+        
+        # Get processors using lazy loading
+        enhanced_doc_processor = get_enhanced_doc_processor()
+        doc_processor = get_doc_processor()
         
         # Create collection
         if enhanced_doc_processor:
@@ -1132,6 +1192,7 @@ async def _process_bulk_upload_background(
                 UPLOAD_PROGRESS[upload_id]["estimated_remaining_seconds"] = avg_time_per_file * remaining_files
         
         # Add to vector store if requested
+        vector_store = get_vector_store()
         if add_to_vector_store and processed_docs and vector_store:
             UPLOAD_PROGRESS[upload_id]["vector_store_progress"] = {
                 "status": "processing",
@@ -1312,7 +1373,8 @@ async def list_bulk_uploads(
 @app.get("/vector-test", response_class=HTMLResponse)
 async def vector_test_page(request: Request):
     """Serve the vector store test interface."""
-    if not VECTOR_STORE_AVAILABLE:
+    vector_store = get_vector_store()
+    if not vector_store:
         return HTMLResponse(
             content="<h1>Vector Store Not Available</h1><p>ChromaDB and sentence-transformers are required.</p>",
             status_code=503
@@ -1326,7 +1388,8 @@ async def add_document_to_vector_store(
     credentials: HTTPAuthorizationCredentials = Depends(optional_verify_api_key)
 ):
     """Add a document to the vector store."""
-    if not VECTOR_STORE_AVAILABLE or not vector_store:
+    vector_store = get_vector_store()
+    if not vector_store:
         raise HTTPException(status_code=503, detail="Vector store not available")
     
     try:
@@ -1352,7 +1415,8 @@ async def search_vector_store(
     credentials: HTTPAuthorizationCredentials = Depends(optional_verify_api_key)
 ):
     """Search documents in the vector store."""
-    if not VECTOR_STORE_AVAILABLE or not vector_store:
+    vector_store = get_vector_store()
+    if not vector_store:
         raise HTTPException(status_code=503, detail="Vector store not available")
     
     try:
@@ -1384,7 +1448,8 @@ async def get_vector_store_stats(
     credentials: HTTPAuthorizationCredentials = Depends(optional_verify_api_key)
 ):
     """Get vector store statistics."""
-    if not VECTOR_STORE_AVAILABLE or not vector_store:
+    vector_store = get_vector_store()
+    if not vector_store:
         raise HTTPException(status_code=503, detail="Vector store not available")
     
     try:
@@ -1400,7 +1465,8 @@ async def clear_vector_store(
     credentials: HTTPAuthorizationCredentials = Depends(verify_api_key)
 ):
     """Clear all documents from the vector store."""
-    if not VECTOR_STORE_AVAILABLE or not vector_store:
+    vector_store = get_vector_store()
+    if not vector_store:
         raise HTTPException(status_code=503, detail="Vector store not available")
     
     try:

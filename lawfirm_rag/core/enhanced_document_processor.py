@@ -28,8 +28,10 @@ except ImportError:
 try:
     import fitz  # PyMuPDF
     PYMUPDF_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     PYMUPDF_AVAILABLE = False
+    logger.warning(f"PyMuPDF not available (common on Python 3.13): {e}")
+    logger.info("PDF processing will use pdfplumber or PyPDF2 as fallback")
 
 try:
     import PyPDF2

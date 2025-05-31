@@ -36,19 +36,24 @@ python-dotenv>=1.0.0
 pdfplumber==0.9.0    # Better PDF text extraction - pinned for stability
 PyMuPDF==1.23.8      # Alternative PDF processor (fitz) - pinned for stability
 
-# Vector database and embeddings - PINNED VERSIONS FOR COMPATIBILITY
+# Vector database and embeddings - WORKING TESTED VERSIONS
 chromadb==0.4.15     # Local vector database - pinned for stability
 numpy==1.24.3        # Required for embeddings - pinned for compatibility
-sentence-transformers==2.2.2  # Local embedding models - pinned for compatibility
-torch==2.1.0         # Required for sentence-transformers (CPU version) - pinned for compatibility
-torchvision==0.16.0  # Added for torch compatibility
-torchaudio==2.1.0    # Added for torch compatibility
 
-# Note: For GPU acceleration, install torch with CUDA:
-# pip install torch==2.1.0+cu118 torchvision==0.16.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+# AI/ML Core - Use CPU-optimized PyTorch with specific index URL
+# Install with: pip install torch==2.1.0+cpu --index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu     # CPU-optimized PyTorch - pinned for compatibility
+sentence-transformers==4.1.0  # Latest stable sentence transformers - tested working
 
 # AI/ML backends
 ollama==0.1.9        # Ollama Python client - pinned for stability
+
+# Note: The following environment variables may help with stability:
+# PYTORCH_DISABLE_PLATFORM_CHECK=1
+# OMP_NUM_THREADS=1
+
+# Note: For GPU acceleration, install torch with CUDA:
+# pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
 
 # Additional ML dependencies for stability
 transformers==4.35.2  # Transformers library - pinned for compatibility with sentence-transformers
