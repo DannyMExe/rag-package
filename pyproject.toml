@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-package"
-version = "0.1.8"
+version = "0.1.9"
 description = "AI-powered document analysis and query generation tool with RAG capabilities"
 readme = "README.md"
 license = {text = "Evaluation License"}
@@ -47,12 +47,11 @@ dependencies = [
     # Document processing - enhanced
     "pdfplumber==0.9.0",
     "PyMuPDF>=1.24.0",
-    # Vector database and embeddings - WORKING TESTED VERSIONS
+    # Vector database and embeddings - WORKING VERSIONS
     "chromadb==0.4.15",
     "numpy==1.24.3",
     "sentence-transformers==4.1.0",  # Latest stable version - tested working
-    "torch==2.1.0+cpu; platform_machine != 'arm64'",  # CPU-optimized PyTorch
-    "torch==2.1.0; platform_machine == 'arm64'",  # ARM64 (Apple Silicon) support
+    "torch==2.1.0+cpu",  # CPU-optimized PyTorch - tested working
     # AI/ML backends
     "ollama==0.1.9",
     # Additional ML dependencies for stability

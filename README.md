@@ -241,7 +241,6 @@ if ai_engine.load_model():
   - FastAPI + Uvicorn (web interface)
   - Rich CLI interface
   - All other dependencies with exact pinned versions
-  - Automatic PyTorch stability configuration
 
 ### Why Isolated Environment?
 This package uses **specific versions** of AI/ML libraries that may conflict with other projects. The automatic environment setup ensures:
@@ -254,14 +253,6 @@ This package uses **specific versions** of AI/ML libraries that may conflict wit
 - **Ollama**: Easy local model management (recommended)
 - **Local GGUF**: Direct model file loading
 - **API Models**: OpenAI, Anthropic, etc. (via configuration)
-
-### Environment Setup
-The system automatically configures optimal settings for PyTorch stability:
-```bash
-# These are set automatically by the system for optimal performance
-export PYTORCH_DISABLE_PLATFORM_CHECK=1  # Prevents platform compatibility errors
-export OMP_NUM_THREADS=1                  # Optimizes CPU performance
-```
 
 ## 🎉 Latest Release Highlights
 
